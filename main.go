@@ -321,6 +321,7 @@ func main() {
 				case <-c:
 				case <-time.Tick(time.Second * 30):
 				}
+				fan.Close()
 			}
 		},
 	}

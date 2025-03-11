@@ -378,6 +378,10 @@ func (fan *Fan) SendPayload(v interface{}) (response []byte, err error) {
 	return response, nil
 }
 
+func (fan *Fan) Close() error {
+	return fan.connection.Close()
+}
+
 var id int32 = 0
 
 func (fan *Fan) nextMsgID() int32 {
