@@ -77,7 +77,7 @@ func printPolybar(power bool, level int) {
 	if power {
 		fmt.Fprint(&buffer, "%{F#00ff80}%{O-3}")
 		fmt.Fprintf(&buffer, "%s", uInt32ToCircledNumberStr(uint32(level)))
-		fmt.Fprint(&buffer, "%{F-}%{O-}")
+		fmt.Fprint(&buffer, "%{F-}%{O}")
 	}
 
 	// end cmds
