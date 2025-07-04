@@ -15,6 +15,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/buger/jsonparser"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 	"github.com/u3mur4/xiaomi-fan-1c/fan1c"
 )
@@ -155,10 +156,19 @@ func getFan(name string) *fan1c.Fan {
 	config, err := getConfig(name)
 	exitIfErr(err)
 
-	fan, err := fan1c.NewFan1C(config.Location, config.Id, config.Token)
+	// An operation that may fail.
+	var fan *fan1c.Fan
+	operation := func() error {
+		fan, err = fan1c.NewFan1C(config.Location, config.Id, config.Token)
+		return err
+	}
+
+	b := backoff.NewExponentialBackOff()
+	err = backoff.Retry(operation, backoff.WithMaxRetries(b, 5))
+	if err != nil {
+		exitIfErr(err)
+	}
 	fan.Timeout(time.Second)
-	// fan.Debug(os.Stderr)
-	exitIfErr(err)
 	return fan
 }
 
