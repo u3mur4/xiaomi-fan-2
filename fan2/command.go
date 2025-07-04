@@ -58,24 +58,22 @@ func switchStatus(status *bool) *param {
 type FanLevel uint8
 
 func (level FanLevel) Increase() FanLevel {
-	if level == FanLevel1 {
-		return FanLevel2
+	if level == FanLevel4 {
+		return FanLevel4
 	}
-	return FanLevel3
+	return FanLevel(int8(level) + 1)
 }
 
 func (level FanLevel) Decrease() FanLevel {
-	if level == FanLevel3 {
-		return FanLevel2
+	if level == FanLevel1 {
+		return FanLevel1
 	}
-	return FanLevel1
+	return FanLevel(uint8(level) - 1)
 }
 
 func (level FanLevel) Next() FanLevel {
-	if level == FanLevel1 {
-		return FanLevel2
-	} else if level == FanLevel2 {
-		return FanLevel3
+	if nextLevel := level.Increase(); level != nextLevel {
+		return nextLevel
 	}
 	return FanLevel1
 }
@@ -84,6 +82,7 @@ const (
 	FanLevel1 FanLevel = 1
 	FanLevel2 FanLevel = 2
 	FanLevel3 FanLevel = 3
+	FanLevel4 FanLevel = 4
 )
 
 func fanLevel(level *FanLevel) *param {
