@@ -1,4 +1,4 @@
-package fan1c
+package fan2
 
 type method string
 

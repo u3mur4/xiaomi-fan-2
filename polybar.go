@@ -73,7 +73,7 @@ func printPolybar(power bool, level int) {
 	// buffer.WriteString(buildCmd("5", "--level-down"))
 
 	// text
-	buffer.WriteString("")
+	buffer.WriteString("")
 	if power {
 		fmt.Fprint(&buffer, "%{F#00ff80}%{O-3}")
 		fmt.Fprintf(&buffer, "%s", uInt32ToCircledNumberStr(uint32(level)))

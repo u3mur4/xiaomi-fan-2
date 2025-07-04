@@ -1,4 +1,4 @@
-package fan1c
+package fan2
 
 import (
 	"encoding/hex"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	"github.com/u3mur4/xiaomi-fan-1c/miio"
+	"github.com/u3mur4/xiaomi-fan-2/miio"
 )
 
 type DeviceInformation struct {

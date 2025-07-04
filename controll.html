@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Button Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #000000;
+    }
+
+    #buttonForm {
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 5px 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <form id="buttonForm">
+    <button type="button" name="toggle" onclick="setCmdAttribute(this.name)">Toggle</button>
+    <button type="button" name="swing" onclick="setCmdAttribute(this.name)">Swing</button>
+    <br>
+    <button type="button" name="speed_1" onclick="setCmdAttribute(this.name)">Speed 1</button>
+    <button type="button" name="speed_2" onclick="setCmdAttribute(this.name)">Speed 2</button>
+    <button type="button" name="speed_3" onclick="setCmdAttribute(this.name)">Speed 3</button>
+    <br>
+    <button type="button" name="off_10" onclick="setCmdAttribute(this.name)">Off 10</button>
+    <button type="button" name="off_20" onclick="setCmdAttribute(this.name)">Off 20</button>
+    <button type="button" name="off_30" onclick="setCmdAttribute(this.name)">Off 30</button>
+    <button type="button" name="off_40" onclick="setCmdAttribute(this.name)">Off 40</button>
+  </form>
+
+  <script>
+    function setCmdAttribute(buttonName) {
+      var urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('cmd', buttonName);
+
+      var newUrl = window.location.origin + window.location.pathname + '?' + urlParams.toString();
+      window.location.href = newUrl;
+    }
+  </script>
+</body>
+</html>
+

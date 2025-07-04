@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -17,7 +18,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
-	"github.com/u3mur4/xiaomi-fan-1c/fan1c"
+	"github.com/u3mur4/xiaomi-fan-2/fan2"
 )
 
 type fanConfig struct {
@@ -152,14 +153,14 @@ func exitIfErr(err error) {
 	}
 }
 
-func getFan(name string) *fan1c.Fan {
+func getFan(name string) *fan2.Fan {
 	config, err := getConfig(name)
 	exitIfErr(err)
 
 	// An operation that may fail.
-	var fan *fan1c.Fan
+	var fan *fan2.Fan
 	operation := func() error {
-		fan, err = fan1c.NewFan1C(config.Location, config.Id, config.Token)
+		fan, err = fan2.NewFan1C(config.Location, config.Id, config.Token)
 		return err
 	}
 
@@ -337,6 +338,41 @@ func main() {
 	}
 	rootCmd.AddCommand(polybarCmd)
 
+	var location string
+	var id uint32
+	var token string
+	var serverCmd = &cobra.Command{
+		Use:   "server",
+		Short: "controll with http server",
+		Run: func(cmd *cobra.Command, args []string) {
+			var fan *fan2.Fan
+			operation := func() error {
+				var err error
+				fan, err = fan2.NewFan1C(location, id, token)
+				return err
+			}
+
+			b := backoff.NewExponentialBackOff()
+			err := backoff.Retry(operation, backoff.WithMaxRetries(b, 5))
+			if err != nil {
+				exitIfErr(err)
+			}
+			fan.Timeout(time.Second)
+
+			port := 35352
+			handler := HandleCmd{fan: fan}
+			http.HandleFunc("/", handler.handleCmd)
+			fmt.Printf("http://0.0.0.0:%d\n", port)
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+				return
+			}
+		},
+	}
+	serverCmd.Flags().StringVar(&location, "location", "", "fan location")
+	serverCmd.Flags().Uint32Var(&id, "id", 0, "id of the fan")
+	serverCmd.Flags().StringVar(&token, "token", "", "fan token")
+	rootCmd.AddCommand(serverCmd)
+
 	// rootCmd.Flags().BoolVar(&toogle, "toogle", false, "toogle fan power")
 	// rootCmd.Flags().BoolVar(&toogle, "update", false, "update server status")
 	// rootCmd.Flags().BoolVar(&levelUp, "level-up", false, "increase fan speed")
@@ -369,7 +405,7 @@ func main() {
 	// 			log.Fatal(err)
 	// 		}
 
-	// 		fan, err := fan1c.NewFan1C(location, uint32(deviceNumber), token)
+	// 		fan, err := fan2.NewFan1C(location, uint32(deviceNumber), token)
 	// 		if err != nil {
 	// 			log.Fatal(err)
 	// 		}
