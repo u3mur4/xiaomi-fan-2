@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -14,10 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/buger/jsonparser"
-	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/u3mur4/xiaomi-fan-2/fan2"
 )
 
@@ -27,125 +22,6 @@ type fanConfig struct {
 	Token    string `json:"token"`
 }
 
-func getConfigFile() string {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	appDir := path.Join(configDir, "fan1c")
-	os.MkdirAll(appDir, 0755)
-
-	return path.Join(appDir, "config.json")
-}
-
-func saveConfig(name string, defaultConfig *fanConfig) error {
-	location, id, token := "", "", ""
-	if defaultConfig != nil {
-		location = defaultConfig.Location
-		token = defaultConfig.Token
-		id = fmt.Sprint(defaultConfig.Id)
-	}
-
-	var qs = []*survey.Question{
-		{
-			Name:     "location",
-			Prompt:   &survey.Input{Message: "What is your device location?", Default: location},
-			Validate: survey.Required,
-		},
-		{
-			Name:   "id",
-			Prompt: &survey.Input{Message: "What is your device id?", Default: id},
-		},
-		{
-			Name:   "token",
-			Prompt: &survey.Input{Message: "What is your device token?", Default: token},
-		},
-	}
-
-	// the answers will be written to this struct
-	answers := fanConfig{}
-
-	// perform the questions
-	err := survey.Ask(qs, &answers)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.OpenFile(getConfigFile(), os.O_CREATE|os.O_RDONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if len(data) == 0 {
-		data = []byte("{}")
-	}
-
-	data, err = jsonparser.Set(data, []byte("\""+answers.Location+"\""), name, "location")
-	if err != nil {
-		return err
-	}
-
-	data, err = jsonparser.Set(data, []byte("\""+answers.Token+"\""), name, "token")
-	if err != nil {
-		return err
-	}
-
-	data, err = jsonparser.Set(data, []byte(fmt.Sprint(answers.Id)), name, "id")
-	if err != nil {
-		return err
-	}
-
-	f2, err := os.Create(getConfigFile())
-	if err != nil {
-		return err
-	}
-	defer f2.Close()
-
-	f2.Write(data)
-	return nil
-}
-
-func getConfig(name string) (*fanConfig, error) {
-	f, err := os.OpenFile(getConfigFile(), os.O_CREATE|os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
-	location, err := jsonparser.GetString(data, name, "location")
-	if err != nil {
-		return nil, err
-	}
-
-	deviceID, err := jsonparser.GetInt(data, name, "id")
-	if err != nil {
-		return nil, err
-	}
-
-	token, err := jsonparser.GetString(data, name, "token")
-	if err != nil {
-		return nil, err
-	}
-
-	return &fanConfig{
-		Location: location,
-		Id:       uint32(deviceID),
-		Token:    token,
-	}, nil
-}
-
 func exitIfErr(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -153,63 +29,95 @@ func exitIfErr(err error) {
 	}
 }
 
-func getFan(name string) *fan2.Fan {
-	config, err := getConfig(name)
-	exitIfErr(err)
-
-	// An operation that may fail.
-	var fan *fan2.Fan
-	operation := func() error {
-		fan, err = fan2.NewFan1C(config.Location, config.Id, config.Token)
-		return err
-	}
-
-	b := backoff.NewExponentialBackOff()
-	err = backoff.Retry(operation, backoff.WithMaxRetries(b, 5))
-	if err != nil {
-		exitIfErr(err)
-	}
-	fan.Timeout(time.Second)
-	return fan
-}
-
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
+	viper.SetConfigName("config")              // name of config file (without extension)
+	viper.SetConfigType("yaml")                // REQUIRED if the config file does not have the extension in the name
+	configDir, _ := os.UserConfigDir()
+	configDir = path.Join(configDir, "xiaomi-fan-2")
+	os.MkdirAll(configDir, 0755)
+	viper.AddConfigPath(configDir) // call multiple times to add many search paths
+	viper.AddConfigPath(".")                   // optionally look for config in the working directory
+
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; ignore error if desired
+			configFile := path.Join(configDir, "config.yaml")
+    		if _, err := os.Create(configFile); err != nil { // perm 0666
+				fmt.Println("cannot cretate config file: ", configFile)
+				exitIfErr(err)
+    		}
+
+			err = viper.ReadInConfig()
+			exitIfErr(err)
+		} else {
+			// Config file was found but another error was produced
+			panic(fmt.Errorf("fatal error config file: %w", err))
+		}
+	}
+
+
 	var name string
+	var config fanConfig
+
 	var rootCmd = &cobra.Command{
-		Use:   "fan1c-polybar",
+		Use:   "xiaomi-fan-2",
 		Short: "control your smart fan",
-		Long:  `control your smart fan`,
 	}
 	rootCmd.PersistentFlags().StringVar(&name, "name", "", "load device from name")
+	rootCmd.PersistentFlags().StringVar(&config.Location, "location", "", "location of the fan")
+	rootCmd.PersistentFlags().Uint32Var(&config.Id, "id", 0, "id of the fan")
+	rootCmd.PersistentFlags().StringVar(&config.Token, "token", "", "token of the fan")
 
-	var editConfig string
-	var configCmd = &cobra.Command{
-		Use:   "config",
-		Short: "list fan config",
+	getFan := func() *fan2.Fan {
+		locationKey := "location"
+		IdKey := "id"
+		tokenKey := "token"
+		if name != "" {
+			locationKey = fmt.Sprintf("%s.location", name)
+			IdKey = fmt.Sprintf("%s.id", name)
+			tokenKey = fmt.Sprintf("%s.token", name)
+		}
+
+		viper.BindPFlag(locationKey, rootCmd.PersistentFlags().Lookup("location"))
+		viper.BindPFlag(IdKey, rootCmd.PersistentFlags().Lookup("id"))
+		viper.BindPFlag(tokenKey, rootCmd.PersistentFlags().Lookup("token"))
+
+		config.Location = viper.GetString(locationKey)
+		config.Id = viper.GetUint32(IdKey)
+		config.Token = viper.GetString(tokenKey)
+
+		fan, err := fan2.NewFan2(config.Location, config.Id, config.Token)
+		exitIfErr(err)
+		return fan
+	}
+
+	var saveCmd = &cobra.Command{
+		Use:   "save [NAME]",
+		Short: "save location, id, token flag as name",
 		Run: func(cmd *cobra.Command, args []string) {
-			if editConfig != "" {
-				defaultConfig, _ := getConfig(editConfig)
-				err := saveConfig(editConfig, defaultConfig)
-				exitIfErr(err)
-			} else {
-				data, _ := ioutil.ReadFile(getConfigFile())
-				var out bytes.Buffer
-				json.Indent(&out, data, "", " ")
-				fmt.Println(out.String())
-				fmt.Println(getConfigFile())
+			if config.Id == 0 || config.Location == "" || config.Token == "" || name == "" {
+				log.Fatal("you have to specify location, token, id and name flags")
 			}
+
+			viper.Set(fmt.Sprintf("%s.location", name), config.Location)
+			viper.Set(fmt.Sprintf("%s.id", name), config.Id)
+			viper.Set(fmt.Sprintf("%s.token", name), config.Token)
+			configFile := viper.ConfigFileUsed()
+			err := viper.WriteConfigAs(configFile)
+			exitIfErr(err)
+			fmt.Println("Config file writen to:", configFile)
 		},
 	}
-	configCmd.Flags().StringVar(&editConfig, "edit", "", "edit config")
-	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(saveCmd)
 
 	var onCmd = &cobra.Command{
 		Use:   "on",
 		Short: "turn on fan",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := getFan(name).On()
+			err := getFan().On()
 			exitIfErr(err)
 		},
 	}
@@ -219,7 +127,7 @@ func main() {
 		Use:   "off",
 		Short: "turn off fan",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := getFan(name).Off()
+			err := getFan().Off()
 			exitIfErr(err)
 		},
 	}
@@ -229,7 +137,7 @@ func main() {
 		Use:   "toogle",
 		Short: "toogle fan",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := getFan(name).Toogle()
+			err := getFan().Toogle()
 			exitIfErr(err)
 		},
 	}
@@ -239,7 +147,7 @@ func main() {
 		Use:   "up",
 		Short: "increase fan speed",
 		Run: func(cmd *cobra.Command, args []string) {
-			fan := getFan(name)
+			fan := getFan()
 			level, err := fan.GetLevel()
 			exitIfErr(err)
 			fan.SetLevel(level.Increase())
@@ -251,7 +159,7 @@ func main() {
 		Use:   "down",
 		Short: "decrease fan speed",
 		Run: func(cmd *cobra.Command, args []string) {
-			fan := getFan(name)
+			fan := getFan()
 			level, err := fan.GetLevel()
 			exitIfErr(err)
 			fan.SetLevel(level.Decrease())
@@ -263,7 +171,7 @@ func main() {
 		Use:   "next",
 		Short: "advance to the next fan speed",
 		Run: func(cmd *cobra.Command, args []string) {
-			fan := getFan(name)
+			fan := getFan()
 			level, err := fan.GetLevel()
 			exitIfErr(err)
 			fan.SetLevel(level.Next())
@@ -276,7 +184,7 @@ func main() {
 		Args:  cobra.ExactArgs(1),
 		Short: "turn off after the specified minutes",
 		Run: func(cmd *cobra.Command, args []string) {
-			fan := getFan(name)
+			fan := getFan()
 			minutes, err := strconv.ParseInt(args[0], 10, 64)
 			exitIfErr(err)
 			err = fan.DelayOff(minutes)
@@ -289,7 +197,7 @@ func main() {
 		Use:   "status",
 		Short: "show fan status",
 		Run: func(cmd *cobra.Command, args []string) {
-			fan := getFan(name)
+			fan := getFan()
 			power, err := fan.GetPower()
 			exitIfErr(err)
 			level, err := fan.GetLevel()
@@ -307,10 +215,10 @@ func main() {
 		Use:   "swing",
 		Short: "toogle horizontal swing",
 		Run: func(cmd *cobra.Command, args []string) {
-			fan := getFan(name)
-			swing, err := fan.GetHorizontalSwing()
-			exitIfErr(err)
-			err = fan.SetHorizontalSwing(!swing)
+			fan := getFan()
+			// swing, err := fan.GetHorizontalSwing()
+			// exitIfErr(err)
+			err = fan.SetHorizontalSwing(10)
 			exitIfErr(err)
 		},
 	}
@@ -324,7 +232,7 @@ func main() {
 			signal.Notify(c, syscall.SIGUSR1)
 
 			for {
-				fan := getFan(name)
+				fan := getFan()
 				power, _ := fan.GetPower()
 				level, _ := fan.GetLevel()
 				printPolybar(power, int(level))
@@ -338,29 +246,12 @@ func main() {
 	}
 	rootCmd.AddCommand(polybarCmd)
 
-	var location string
-	var id uint32
-	var token string
 	var serverCmd = &cobra.Command{
 		Use:   "server",
 		Short: "controll with http server",
 		Run: func(cmd *cobra.Command, args []string) {
-			var fan *fan2.Fan
-			operation := func() error {
-				var err error
-				fan, err = fan2.NewFan1C(location, id, token)
-				return err
-			}
-
-			b := backoff.NewExponentialBackOff()
-			err := backoff.Retry(operation, backoff.WithMaxRetries(b, 5))
-			if err != nil {
-				exitIfErr(err)
-			}
-			fan.Timeout(time.Second)
-
 			port := 35352
-			handler := HandleCmd{fan: fan}
+			handler := HandleCmd{getFan: getFan}
 			http.HandleFunc("/", handler.handleCmd)
 			fmt.Printf("http://0.0.0.0:%d\n", port)
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
@@ -368,70 +259,7 @@ func main() {
 			}
 		},
 	}
-	serverCmd.Flags().StringVar(&location, "location", "", "fan location")
-	serverCmd.Flags().Uint32Var(&id, "id", 0, "id of the fan")
-	serverCmd.Flags().StringVar(&token, "token", "", "fan token")
 	rootCmd.AddCommand(serverCmd)
-
-	// rootCmd.Flags().BoolVar(&toogle, "toogle", false, "toogle fan power")
-	// rootCmd.Flags().BoolVar(&toogle, "update", false, "update server status")
-	// rootCmd.Flags().BoolVar(&levelUp, "level-up", false, "increase fan speed")
-	// rootCmd.Flags().BoolVar(&levelDown, "level-down", false, "decrease fan speed")
-	// rootCmd.Flags().BoolVar(&horizontalSwing, "horizontal-swing", false, "toogle horizontal swing")
-
-	// var saveCmd = &cobra.Command{
-	// 	Use:   "save device token",
-	// 	Args:  cobra.ExactArgs(2),
-	// 	Short: "save token for a device",
-	// 	Long:  `save token for a device`,
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		saveToken(args[0], args[1])
-	// 	},
-	// }
-
-	// rootCmd.AddCommand(saveCmd)
-
-	// var device string
-	// var location string
-	// var debug bool
-
-	// 		token, err := getToken(device)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-
-	// 		deviceNumber, err := strconv.Atoi(device)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-
-	// 		fan, err := fan2.NewFan1C(location, uint32(deviceNumber), token)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// printPolybar(fanPower, fanLevel)
-	// go func() {
-	// 	ticker := time.NewTicker(time.Second * 30)
-
-	// 	for {
-	// 		select {
-	// 		case <-fanPrintNow:
-	// 			printPolybar(fanPower, fanLevel)
-	// 		case <-ticker.C:
-	// 			updateFanProperties(true)
-	// 			printPolybar(fanPower, fanLevel)
-	// 		}
-	// 	}
-	// }()
-
-	// }
-
-	// serverCmd.Flags().StringVar(&device, "device", "", "set device id")
-	// serverCmd.MarkFlagRequired("device")
-	// serverCmd.Flags().StringVar(&location, "location", "", "ip address of the device")
-	// serverCmd.MarkFlagRequired("location")
-	// serverCmd.Flags().BoolVar(&debug, "debug", false, "enable debug messages")
-	// rootCmd.AddCommand(serverCmd)
 
 	rootCmd.Execute()
 }

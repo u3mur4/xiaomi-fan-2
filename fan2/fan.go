@@ -203,7 +203,7 @@ func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error
 
 }
 
-func (fan *Fan) SetHorizontalSwing(status bool) error {
+func (fan *Fan) SetHorizontalSwing(status int64) error {
 	cmd, err := fan.createCommand(setProperties, horizontalSwing(&status))
 	if err != nil {
 		return err
@@ -213,23 +213,23 @@ func (fan *Fan) SetHorizontalSwing(status bool) error {
 	return err
 }
 
-func (fan *Fan) GetHorizontalSwing() (bool, error) {
+func (fan *Fan) GetHorizontalSwing() (int64, error) {
 	cmd, err := fan.createCommand(getProperties, horizontalSwing(nil))
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
 	response, err := fan.SendPayload(cmd)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
 	val, err := fan.getResponseValue(response, 0)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
-	return val.(bool), nil
+	return val.(int64), nil
 }
 
 func (fan *Fan) GetPower() (bool, error) {
@@ -392,7 +392,7 @@ func (fan *Fan) nextMsgID() int32 {
 	return id
 }
 
-func NewFan1C(ip string, deviceID uint32, deciveToken string) (*Fan, error) {
+func NewFan2(ip string, deviceID uint32, deciveToken string) (*Fan, error) {
 	rand.Seed(time.Now().UnixNano())
 	token, err := hex.DecodeString(deciveToken)
 	if err != nil {
@@ -411,6 +411,7 @@ func NewFan1C(ip string, deviceID uint32, deciveToken string) (*Fan, error) {
 	}
 
 	go fan.reader()
+	fan.Timeout(time.Second * 2)
 
 	return fan, nil
 }
