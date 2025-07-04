@@ -61,17 +61,6 @@ func printPolybar(power bool, level int) {
 		buffer.WriteString("}")
 	}
 
-	// left click 1
-	// buffer.WriteString(buildCmd("1", "--horizontal-swing"))
-	// middle click 2
-	// buffer.WriteString(buildCmd("2", "--update"))
-	// right click 3
-	// buffer.WriteString(buildCmd("3", "--toogle"))
-	// scroll up 4
-	// buffer.WriteString(buildCmd("4", "--level-up"))
-	// scroll down 5
-	// buffer.WriteString(buildCmd("5", "--level-down"))
-
 	// text
 	buffer.WriteString("")
 	if power {
@@ -79,13 +68,6 @@ func printPolybar(power bool, level int) {
 		fmt.Fprintf(&buffer, "%s", uInt32ToCircledNumberStr(uint32(level)))
 		fmt.Fprint(&buffer, "%{F-}%{O}")
 	}
-
-	// end cmds
-	// buffer.WriteString("%{A}")
-	// buffer.WriteString("%{A}")
-	// buffer.WriteString("%{A}")
-	// buffer.WriteString("%{A}")
-	// buffer.WriteString("%{A}")
 
 	// end color
 	if power {
