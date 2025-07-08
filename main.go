@@ -29,6 +29,29 @@ func exitIfErr(err error) {
 	}
 }
 
+func notifyServer(port int) (<-chan struct{}, error) {
+	ch := make(chan struct{})
+
+	go func() {
+		http.HandleFunc("/notify", func(w http.ResponseWriter, r *http.Request) {
+			select {
+			case ch <- struct{}{}:
+			default:
+				// Handle case where channel is full and we can't send
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "Error sending notification")
+			}
+		})
+
+		if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil); err != nil {
+			log.Fatal(err)
+		}
+
+	}()
+
+	return ch, nil
+}
+
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
@@ -261,27 +284,38 @@ func main() {
 	}
 	rootCmd.AddCommand(angleCmd)
 
+	notifServerPort := 25631
 	var waybarCmd = &cobra.Command{
 		Use:   "waybar",
 		Short: "waybar live output with controll",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, syscall.SIGUSR1)
+			sn, err := notifyServer(notifServerPort)
+			exitIfErr(err)
 
+			fan := getFan()
 			for {
-				fan := getFan()
+				if fan == nil {
+					fan = getFan()
+				}
 				power, _ := fan.GetPower()
 				level, _ := fan.GetLevel()
 				mode, _ := fan.GetMode()
 				printWaybar(power, int(level), int(mode))
 				select {
+				case <-sn:
+					// contine without closing connection
 				case <-c:
+					// contine without closing connection
 				case <-time.Tick(time.Second * 30):
+					fan.Close()
+					fan = nil
 				}
-				fan.Close()
 			}
 		},
 	}
+	waybarCmd.Flags().IntVar(&notifServerPort, "notify-server-port", notifServerPort, "Port to listen")
 	rootCmd.AddCommand(waybarCmd)
 
 	var polybarCmd = &cobra.Command{
