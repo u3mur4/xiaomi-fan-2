@@ -203,7 +203,7 @@ func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error
 
 }
 
-func (fan *Fan) SetHorizontalSwing(status int64) error {
+func (fan *Fan) SetHorizontalSwing(status bool) error {
 	cmd, err := fan.createCommand(setProperties, horizontalSwing(&status))
 	if err != nil {
 		return err
@@ -213,23 +213,23 @@ func (fan *Fan) SetHorizontalSwing(status int64) error {
 	return err
 }
 
-func (fan *Fan) GetHorizontalSwing() (int64, error) {
+func (fan *Fan) GetHorizontalSwing() (bool, error) {
 	cmd, err := fan.createCommand(getProperties, horizontalSwing(nil))
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 
 	response, err := fan.SendPayload(cmd)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 
 	val, err := fan.getResponseValue(response, 0)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 
-	return val.(int64), nil
+	return val.(bool), nil
 }
 
 func (fan *Fan) GetPower() (bool, error) {

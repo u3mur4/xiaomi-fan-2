@@ -31,10 +31,10 @@ type param struct {
 	Arguments interface{} `json:"arguments,omitempty"`
 }
 
-func horizontalSwing(status *int64) *param {
+func horizontalSwing(status *bool) *param {
 	return &param{
 		ServiceID:  2,
-		PropertyID: 3,
+		PropertyID: 4,
 		Value:      status,
 	}
 }

@@ -216,9 +216,9 @@ func main() {
 		Short: "toogle horizontal swing",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
-			// swing, err := fan.GetHorizontalSwing()
-			// exitIfErr(err)
-			err = fan.SetHorizontalSwing(10)
+			swing, err := fan.GetHorizontalSwing()
+			exitIfErr(err)
+			err = fan.SetHorizontalSwing(!swing)
 			exitIfErr(err)
 		},
 	}
