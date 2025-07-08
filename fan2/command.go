@@ -92,3 +92,45 @@ func fanLevel(level *FanLevel) *param {
 		Value:      level,
 	}
 }
+
+type HorizontalAngle uint16
+
+func (angle HorizontalAngle) Increase() HorizontalAngle {
+	if angle == HorizontalAngle140 || angle == HorizontalAngle120 {
+		return HorizontalAngle140
+	}
+
+	return HorizontalAngle(int16(angle) + 30)
+}
+
+func (angle HorizontalAngle) Decrease() HorizontalAngle {
+	if angle == HorizontalAngle30 {
+		return HorizontalAngle30
+	} else if angle == HorizontalAngle140 {
+		return HorizontalAngle120
+	}
+	return HorizontalAngle(uint16(angle) - 30)
+}
+
+func (angle HorizontalAngle) Next() HorizontalAngle {
+	if nextAngle := angle.Increase(); angle != nextAngle {
+		return nextAngle
+	}
+	return HorizontalAngle30
+}
+
+const (
+	HorizontalAngle30 HorizontalAngle = 30
+	HorizontalAngle60 HorizontalAngle = 60
+	HorizontalAngle90 HorizontalAngle = 90
+	HorizontalAngle120 HorizontalAngle = 120
+	HorizontalAngle140 HorizontalAngle = 140
+)
+
+func horizontalAngle(angle *HorizontalAngle) *param {
+	return &param{
+		ServiceID:  2,
+		PropertyID: 5,
+		Value:      angle,
+	}
+}

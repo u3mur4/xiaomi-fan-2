@@ -32,23 +32,23 @@ func exitIfErr(err error) {
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	viper.SetConfigName("config")              // name of config file (without extension)
-	viper.SetConfigType("yaml")                // REQUIRED if the config file does not have the extension in the name
+	viper.SetConfigName("config") // name of config file (without extension)
+	viper.SetConfigType("yaml")   // REQUIRED if the config file does not have the extension in the name
 	configDir, _ := os.UserConfigDir()
 	configDir = path.Join(configDir, "xiaomi-fan-2")
 	os.MkdirAll(configDir, 0755)
 	viper.AddConfigPath(configDir) // call multiple times to add many search paths
-	viper.AddConfigPath(".")                   // optionally look for config in the working directory
+	viper.AddConfigPath(".")       // optionally look for config in the working directory
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired
 			configFile := path.Join(configDir, "config.yaml")
-    		if _, err := os.Create(configFile); err != nil { // perm 0666
+			if _, err := os.Create(configFile); err != nil { // perm 0666
 				fmt.Println("cannot cretate config file: ", configFile)
 				exitIfErr(err)
-    		}
+			}
 
 			err = viper.ReadInConfig()
 			exitIfErr(err)
@@ -57,7 +57,6 @@ func main() {
 			panic(fmt.Errorf("fatal error config file: %w", err))
 		}
 	}
-
 
 	var name string
 	var config fanConfig
@@ -204,9 +203,12 @@ func main() {
 			exitIfErr(err)
 			swing, err := fan.GetHorizontalSwing()
 			exitIfErr(err)
+			angle, err := fan.GetHorizontalAngle()
+			exitIfErr(err)
 			fmt.Printf("Power: %+v\n", power)
 			fmt.Printf("Level: %+v\n", level)
 			fmt.Printf("Swing: %+v\n", swing)
+			fmt.Printf("Angle: %+v\n", angle)
 		},
 	}
 	rootCmd.AddCommand(statusCmd)
@@ -223,6 +225,25 @@ func main() {
 		},
 	}
 	rootCmd.AddCommand(swingCmd)
+
+	var angleCmd = &cobra.Command{
+		Use:   "angle [ANGLE]",
+		Short: "next horizontal swing angle",
+		Run: func(cmd *cobra.Command, args []string) {
+			fan := getFan()
+			angle, _ := fan.GetHorizontalAngle()
+			if len(args) > 0 {
+				angleInt, err := strconv.Atoi(args[0])
+				exitIfErr(err)
+				angle = fan2.HorizontalAngle(angleInt)
+			} else {
+				angle = angle.Next()
+			}
+			err = fan.SetHorizontalAngle(angle)
+			exitIfErr(err)
+		},
+	}
+	rootCmd.AddCommand(angleCmd)
 
 	var polybarCmd = &cobra.Command{
 		Use:   "polybar",

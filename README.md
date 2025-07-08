@@ -7,3 +7,6 @@ https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:fan:000
 
 <!-- fan, err := fan2.NewFan1C(ip, 241125505, "e0835570be596e487f3f8ec97637b633") -->
 https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor
+
+
+https://home.miot-spec.com/spec/dmaker.fan.p18

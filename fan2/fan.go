@@ -203,6 +203,35 @@ func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error
 
 }
 
+func (fan *Fan) SetHorizontalAngle(status HorizontalAngle) error {
+	cmd, err := fan.createCommand(setProperties, horizontalAngle(&status))
+	if err != nil {
+		return err
+	}
+
+	_, err = fan.SendPayload(cmd)
+	return err
+}
+
+func (fan *Fan) GetHorizontalAngle() (HorizontalAngle, error) {
+	cmd, err := fan.createCommand(getProperties, horizontalAngle(nil))
+	if err != nil {
+		return HorizontalAngle30, err
+	}
+
+	response, err := fan.SendPayload(cmd)
+	if err != nil {
+		return HorizontalAngle30, err
+	}
+
+	val, err := fan.getResponseValue(response, 0)
+	if err != nil {
+		return HorizontalAngle30, err
+	}
+
+	return HorizontalAngle(val.(int64)), nil
+}
+
 func (fan *Fan) SetHorizontalSwing(status bool) error {
 	cmd, err := fan.createCommand(setProperties, horizontalSwing(&status))
 	if err != nil {
