@@ -292,16 +292,22 @@ func main() {
 			signal.Notify(c, syscall.Signal(34))
 			signal.Notify(c, syscall.Signal(35))
 
+			fan := getFan()
 			for {
-				fan := getFan()
+				if fan == nil {
+					fan = getFan()
+				}
 				power, _ := fan.GetPower()
 				level, _ := fan.GetLevel()
 				printPolybar(power, int(level))
 				select {
 				case <-c:
+					// keep going without closing the connection
 				case <-time.Tick(time.Second * 30):
+					// close the connection
+					fan.Close()
+					fan = nil
 				}
-				fan.Close()
 			}
 		},
 	}
