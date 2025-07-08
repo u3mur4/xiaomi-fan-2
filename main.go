@@ -245,12 +245,35 @@ func main() {
 	}
 	rootCmd.AddCommand(angleCmd)
 
+	var waybarCmd = &cobra.Command{
+		Use:   "waybar",
+		Short: "waybar live output with controll",
+		Run: func(cmd *cobra.Command, args []string) {
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, syscall.SIGUSR1)
+
+			for {
+				fan := getFan()
+				power, _ := fan.GetPower()
+				level, _ := fan.GetLevel()
+				printWaybar(power, int(level))
+				select {
+				case <-c:
+				case <-time.Tick(time.Second * 30):
+				}
+				fan.Close()
+			}
+		},
+	}
+	rootCmd.AddCommand(waybarCmd)
+
 	var polybarCmd = &cobra.Command{
 		Use:   "polybar",
 		Short: "polybar live output with controll",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := make(chan os.Signal, 1)
-			signal.Notify(c, syscall.SIGUSR1)
+			signal.Notify(c, syscall.Signal(34))
+			signal.Notify(c, syscall.Signal(35))
 
 			for {
 				fan := getFan()

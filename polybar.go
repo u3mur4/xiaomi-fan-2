@@ -38,7 +38,7 @@ func uInt32ToCircledNumberStr(number uint32) string {
 	return result.String()
 }
 
-func buildCmd(click string, args ...string) string {
+func buildCmd(name string, click string, args ...string) string {
 	b := strings.Builder{}
 
 	exec, _ := os.Executable()
