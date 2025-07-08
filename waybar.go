@@ -6,13 +6,17 @@ import (
 	"image/color"
 )
 
-func printWaybar(power bool, level int) {
+func printWaybar(power bool, level int, mode int) {
 	buffer := bytes.Buffer{}
 
 	// color
 	if power {
 		buffer.WriteString("<span color='")
-		buffer.WriteString(hexColor(color.RGBA{G: 170}))
+		outputColor := color.RGBA{G: 170}
+		if mode == 1 {
+			outputColor = color.RGBA{R: 100, G: 100, B: 250}
+		}
+		buffer.WriteString(hexColor(outputColor))
 		buffer.WriteString("'>")
 	}
 

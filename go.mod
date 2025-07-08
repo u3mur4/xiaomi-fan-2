@@ -1,6 +1,6 @@
 module github.com/u3mur4/xiaomi-fan-2
 
-go 1.20
+go 1.22
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.2.12

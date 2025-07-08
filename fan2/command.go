@@ -134,3 +134,11 @@ func horizontalAngle(angle *HorizontalAngle) *param {
 		Value:      angle,
 	}
 }
+
+func mode(mode *Mode) *param {
+	return &param{
+		ServiceID:  2,
+		PropertyID: 3,
+		Value:      mode,
+	}
+}

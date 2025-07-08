@@ -20,12 +20,19 @@ type DeviceInformation struct {
 	FirmwareVerson string
 }
 
-type Mode int
+type Mode uint8
 
 const (
 	StraightWind Mode = 0
 	Sleep        Mode = 1
 )
+
+func (m Mode) Toogle() Mode {
+	if m == StraightWind {
+		return Sleep
+	}
+	return StraightWind
+}
 
 type DeviceStatus struct {
 	Power                 bool
@@ -156,6 +163,36 @@ func (fan *Fan) GetLevel() (FanLevel, error) {
 	}
 
 	return FanLevel(val.(int64)), nil
+}
+
+func (fan *Fan) GetMode() (Mode, error) {
+	cmd, err := fan.createCommand(getProperties, mode(nil))
+	if err != nil {
+		return 0, err
+	}
+
+	response, err := fan.SendPayload(cmd)
+	if err != nil {
+		return 0, err
+	}
+
+	val, err := fan.getResponseValue(response, 0)
+	fmt.Println("val", val)
+	if err != nil {
+		return 0, err
+	}
+
+	return Mode(val.(int64)), nil
+}
+
+func (fan *Fan) SetMode(mode_ Mode) error {
+	cmd, err := fan.createCommand(setProperties, mode(&mode_))
+	if err != nil {
+		return err
+	}
+
+	_, err = fan.SendPayload(cmd)
+	return err
 }
 
 func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error) {

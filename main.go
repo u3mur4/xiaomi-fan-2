@@ -205,10 +205,13 @@ func main() {
 			exitIfErr(err)
 			angle, err := fan.GetHorizontalAngle()
 			exitIfErr(err)
+			mode, err := fan.GetMode()
+			exitIfErr(err)
 			fmt.Printf("Power: %+v\n", power)
 			fmt.Printf("Level: %+v\n", level)
 			fmt.Printf("Swing: %+v\n", swing)
 			fmt.Printf("Angle: %+v\n", angle)
+			fmt.Printf("Mode: %+v\n", mode)
 		},
 	}
 	rootCmd.AddCommand(statusCmd)
@@ -225,6 +228,19 @@ func main() {
 		},
 	}
 	rootCmd.AddCommand(swingCmd)
+
+	var modeCmd = &cobra.Command{
+		Use:   "mode",
+		Short: "toogle between direct and natural breeze",
+		Run: func(cmd *cobra.Command, args []string) {
+			fan := getFan()
+			mode, err := fan.GetMode()
+			exitIfErr(err)
+			err = fan.SetMode(mode.Toogle())
+			exitIfErr(err)
+		},
+	}
+	rootCmd.AddCommand(modeCmd)
 
 	var angleCmd = &cobra.Command{
 		Use:   "angle [ANGLE]",
@@ -256,7 +272,8 @@ func main() {
 				fan := getFan()
 				power, _ := fan.GetPower()
 				level, _ := fan.GetLevel()
-				printWaybar(power, int(level))
+				mode, _ := fan.GetMode()
+				printWaybar(power, int(level), int(mode))
 				select {
 				case <-c:
 				case <-time.Tick(time.Second * 30):
