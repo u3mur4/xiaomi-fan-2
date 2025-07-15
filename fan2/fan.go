@@ -177,7 +177,6 @@ func (fan *Fan) GetMode() (Mode, error) {
 	}
 
 	val, err := fan.getResponseValue(response, 0)
-	fmt.Println("val", val)
 	if err != nil {
 		return 0, err
 	}
