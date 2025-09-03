@@ -1,0 +1,18 @@
+# Ignore git files
+.git
+.gitignore
+
+# Ignore secrets and environment files
+token.env
+
+# Ignore existing binaries
+xiaomi-fan-2
+
+# Ignore IDE/editor directories
+.vscode/
+.idea/
+
+# Ignore the Dockerfile itself
+Dockerfile
+
+    
