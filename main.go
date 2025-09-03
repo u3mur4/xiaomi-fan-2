@@ -62,6 +62,7 @@ func main() {
 	os.MkdirAll(configDir, 0755)
 	viper.AddConfigPath(configDir) // call multiple times to add many search paths
 	viper.AddConfigPath(".")       // optionally look for config in the working directory
+	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
