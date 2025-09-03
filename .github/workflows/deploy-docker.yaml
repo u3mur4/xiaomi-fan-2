@@ -7,7 +7,6 @@ on:
       version:
         description: 'Image version tag to build (e.g., v1.0.0)'
         required: true
-        default: 'v1.0.0'
 
 jobs:
   build-and-push:
@@ -25,7 +24,7 @@ jobs:
         with:
           registry: gitea.morix.site
           username: ${{ gitea.actor }} # The user who triggered the workflow
-          password: ${{ secrets.GITEA_TOKEN }} # Use a dedicated token!
+          password: ${{ secrets.REGISTRY_TOKEN }} # Use a dedicated token!
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
