@@ -103,7 +103,7 @@ func (fan *Fan) GetDeviceInformation() (*DeviceInformation, error) {
 		return nil, err
 	}
 
-	response, err := fan.SendPayload(cmd)
+	response, err := fan.SendPayloadAndWait(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +142,7 @@ func (fan *Fan) SetLevel(level FanLevel) error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) GetLevel() (FanLevel, error) {
@@ -152,7 +151,7 @@ func (fan *Fan) GetLevel() (FanLevel, error) {
 		return 0, err
 	}
 
-	response, err := fan.SendPayload(cmd)
+	response, err := fan.SendPayloadAndWait(cmd)
 	if err != nil {
 		return 0, err
 	}
@@ -171,7 +170,7 @@ func (fan *Fan) GetMode() (Mode, error) {
 		return 0, err
 	}
 
-	response, err := fan.SendPayload(cmd)
+	response, err := fan.SendPayloadAndWait(cmd)
 	if err != nil {
 		return 0, err
 	}
@@ -190,8 +189,7 @@ func (fan *Fan) SetMode(mode_ Mode) error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error) {
@@ -245,8 +243,7 @@ func (fan *Fan) SetHorizontalAngle(status HorizontalAngle) error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) GetHorizontalAngle() (HorizontalAngle, error) {
@@ -255,7 +252,7 @@ func (fan *Fan) GetHorizontalAngle() (HorizontalAngle, error) {
 		return HorizontalAngle30, err
 	}
 
-	response, err := fan.SendPayload(cmd)
+	response, err := fan.SendPayloadAndWait(cmd)
 	if err != nil {
 		return HorizontalAngle30, err
 	}
@@ -274,8 +271,7 @@ func (fan *Fan) SetHorizontalSwing(status bool) error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) GetHorizontalSwing() (bool, error) {
@@ -284,7 +280,7 @@ func (fan *Fan) GetHorizontalSwing() (bool, error) {
 		return false, err
 	}
 
-	response, err := fan.SendPayload(cmd)
+	response, err := fan.SendPayloadAndWait(cmd)
 	if err != nil {
 		return false, err
 	}
@@ -303,7 +299,7 @@ func (fan *Fan) GetPower() (bool, error) {
 		return false, err
 	}
 
-	response, err := fan.SendPayload(cmd)
+	response, err := fan.SendPayloadAndWait(cmd)
 	if err != nil {
 		return false, err
 	}
@@ -322,8 +318,7 @@ func (fan *Fan) DelayOff(minutes int64) error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) On() error {
@@ -333,8 +328,7 @@ func (fan *Fan) On() error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) Off() error {
@@ -344,8 +338,7 @@ func (fan *Fan) Off() error {
 		return err
 	}
 
-	_, err = fan.SendPayload(cmd)
-	return err
+	return fan.SendPayload(cmd)
 }
 
 func (fan *Fan) Toogle() error {
@@ -392,15 +385,19 @@ func (fan *Fan) createCommand(method method, params ...*param) (cmd *command, er
 	return cmd, nil
 }
 
-func (fan *Fan) SendPayloadJSON(payload []byte) (response []byte, err error) {
+func (fan *Fan) SendPayloadJSON(payload []byte, waitForRespone bool) (response []byte, err error) {
 	msgID, err := jsonparser.GetInt(payload, "id")
 	if err != nil {
 		return nil, err
 	}
-	fan.responses[msgID] = make(chan []byte)
-	defer func() {
-		delete(fan.responses, msgID)
-	}()
+
+	if waitForRespone {
+		// register channel before sending payload
+		fan.responses[msgID] = make(chan []byte)
+		defer func() {
+			delete(fan.responses, msgID)
+		}()
+	}
 
 	if fan.timeout > 0 {
 		fan.connection.SetWriteDeadline(time.Now().Add(fan.timeout))
@@ -409,6 +406,10 @@ func (fan *Fan) SendPayloadJSON(payload []byte) (response []byte, err error) {
 	_, err = fan.connection.Write(payload)
 	if err != nil {
 		return nil, err
+	}
+
+	if !waitForRespone {
+		return nil, nil
 	}
 
 	select {
@@ -423,13 +424,13 @@ func (fan *Fan) SendPayloadJSON(payload []byte) (response []byte, err error) {
 
 }
 
-func (fan *Fan) SendPayload(v interface{}) (response []byte, err error) {
+func (fan *Fan) SendPayloadAndWait(v interface{}) (response []byte, err error) {
 	payload, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err = fan.SendPayloadJSON(payload)
+	response, err = fan.SendPayloadJSON(payload, true)
 	if err != nil {
 		return nil, err
 	}
@@ -441,6 +442,20 @@ func (fan *Fan) SendPayload(v interface{}) (response []byte, err error) {
 	}
 
 	return response, nil
+}
+
+func (fan *Fan) SendPayload(v interface{}) (err error) {
+	payload, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	_, err = fan.SendPayloadJSON(payload, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (fan *Fan) Close() error {
