@@ -361,6 +361,17 @@ func main() {
 		},
 	}
 	rootCmd.AddCommand(serverCmd)
-
 	rootCmd.Execute()
+	sendNotify(notifServerPort)
+}
+
+func sendNotify(notifServerPort int) error {
+	url := fmt.Sprintf("http://127.0.0.1:%d/notify", notifServerPort)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }
