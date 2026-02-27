@@ -41,4 +41,4 @@ COPY --from=builder /xiaomi-fan-2 /app/xiaomi-fan-2
 EXPOSE 35352
 
 # Command to run the application
-CMD ["/app/xiaomi-fan-2 server"]
+CMD ["/app/xiaomi-fan-2", "server"]
