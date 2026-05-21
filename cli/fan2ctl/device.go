@@ -11,8 +11,9 @@ import (
 
 func init() {
 	var deviceCmd = &cobra.Command{
-		Use:   "device",
-		Short: "manage device configurations",
+		Use:     "device",
+		Short:   "manage device configurations",
+		GroupID: "config",
 	}
 
 	var addCmd = &cobra.Command{

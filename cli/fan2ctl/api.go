@@ -150,8 +150,9 @@ func init() {
 	var port int
 
 	var apiCmd = &cobra.Command{
-		Use:   "api",
-		Short: "start REST API server",
+		Use:     "api",
+		Short:   "start REST API server",
+		GroupID: "integration",
 		Run: func(cmd *cobra.Command, args []string) {
 			origin, _ := cmd.Flags().GetString("origin")
 			handler := &apiHandler{origin: origin}

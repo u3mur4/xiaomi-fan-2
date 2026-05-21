@@ -151,6 +151,10 @@ func singleDevice() string {
 func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
+	rootCmd.AddGroup(&cobra.Group{ID: "fan", Title: "Fan Control:"})
+	rootCmd.AddGroup(&cobra.Group{ID: "integration", Title: "Integration:"})
+	rootCmd.AddGroup(&cobra.Group{ID: "config", Title: "Configuration:"})
+
 	initConfig()
 
 	rootCmd.PersistentFlags().StringVar(&deviceName, "device", "", "use named device")

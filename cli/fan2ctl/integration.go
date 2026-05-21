@@ -11,8 +11,9 @@ import (
 
 func init() {
 	var waybarCmd = &cobra.Command{
-		Use:   "waybar",
-		Short: "waybar live output with control",
+		Use:     "waybar",
+		Short:   "waybar live output with control",
+		GroupID: "integration",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, syscall.SIGUSR1)
@@ -54,8 +55,9 @@ func init() {
 	rootCmd.AddCommand(waybarCmd)
 
 	var polybarCmd = &cobra.Command{
-		Use:   "polybar",
-		Short: "polybar live output with control",
+		Use:     "polybar",
+		Short:   "polybar live output with control",
+		GroupID: "integration",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, syscall.Signal(34))

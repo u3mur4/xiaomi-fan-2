@@ -10,8 +10,9 @@ import (
 
 func init() {
 	var onCmd = &cobra.Command{
-		Use:   "on",
-		Short: "turn on fan",
+		Use:     "on",
+		Short:   "turn on fan",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			exitIfErr(getFan().On())
 		},
@@ -19,8 +20,9 @@ func init() {
 	rootCmd.AddCommand(onCmd)
 
 	var offCmd = &cobra.Command{
-		Use:   "off",
-		Short: "turn off fan",
+		Use:     "off",
+		Short:   "turn off fan",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			exitIfErr(getFan().Off())
 		},
@@ -28,8 +30,9 @@ func init() {
 	rootCmd.AddCommand(offCmd)
 
 	var toggleCmd = &cobra.Command{
-		Use:   "toggle",
-		Short: "toggle fan",
+		Use:     "toggle",
+		Short:   "toggle fan",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			exitIfErr(getFan().Toggle())
 		},
@@ -37,8 +40,9 @@ func init() {
 	rootCmd.AddCommand(toggleCmd)
 
 	var upCmd = &cobra.Command{
-		Use:   "up",
-		Short: "increase fan speed",
+		Use:     "up",
+		Short:   "increase fan speed",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			level, err := fan.GetLevel()
@@ -49,8 +53,9 @@ func init() {
 	rootCmd.AddCommand(upCmd)
 
 	var downCmd = &cobra.Command{
-		Use:   "down",
-		Short: "decrease fan speed",
+		Use:     "down",
+		Short:   "decrease fan speed",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			level, err := fan.GetLevel()
@@ -61,8 +66,9 @@ func init() {
 	rootCmd.AddCommand(downCmd)
 
 	var nextCmd = &cobra.Command{
-		Use:   "next",
-		Short: "advance to the next fan speed",
+		Use:     "next",
+		Short:   "advance to the next fan speed",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			level, err := fan.GetLevel()
@@ -73,9 +79,10 @@ func init() {
 	rootCmd.AddCommand(nextCmd)
 
 	var delayOffCmd = &cobra.Command{
-		Use:   "delay_off <minutes>",
-		Args:  cobra.ExactArgs(1),
-		Short: "turn off after the specified minutes",
+		Use:     "delay_off <minutes>",
+		Args:    cobra.ExactArgs(1),
+		Short:   "turn off after the specified minutes",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			minutes, err := strconv.Atoi(args[0])
@@ -86,8 +93,9 @@ func init() {
 	rootCmd.AddCommand(delayOffCmd)
 
 	var onlineCmd = &cobra.Command{
-		Use:   "online",
-		Short: "check if the fan is reachable",
+		Use:     "online",
+		Short:   "check if the fan is reachable",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			getFan().GetPower()
 			fmt.Println("online")
@@ -96,8 +104,9 @@ func init() {
 	rootCmd.AddCommand(onlineCmd)
 
 	var statusCmd = &cobra.Command{
-		Use:   "status",
-		Short: "show fan status",
+		Use:     "status",
+		Short:   "show fan status",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			power, err := fan.GetPower()
@@ -120,8 +129,9 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 
 	var swingCmd = &cobra.Command{
-		Use:   "swing",
-		Short: "toggle horizontal swing",
+		Use:     "swing",
+		Short:   "toggle horizontal swing",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			swing, err := fan.GetHorizontalSwing()
@@ -132,8 +142,9 @@ func init() {
 	rootCmd.AddCommand(swingCmd)
 
 	var modeCmd = &cobra.Command{
-		Use:   "mode",
-		Short: "toggle between direct and natural breeze",
+		Use:     "mode",
+		Short:   "toggle between direct and natural breeze",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			mode, err := fan.GetMode()
@@ -144,8 +155,9 @@ func init() {
 	rootCmd.AddCommand(modeCmd)
 
 	var angleCmd = &cobra.Command{
-		Use:   "angle [<angle>]",
-		Short: "set or cycle horizontal swing angle",
+		Use:     "angle [<angle>]",
+		Short:   "set or cycle horizontal swing angle",
+		GroupID: "fan",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
 			angle, _ := fan.GetHorizontalAngle()

@@ -16,8 +16,9 @@ func init() {
 	var port int
 
 	var webCmd = &cobra.Command{
-		Use:   "web",
-		Short: "start web UI",
+		Use:     "web",
+		Short:   "start web UI",
+		GroupID: "integration",
 		Run: func(cmd *cobra.Command, args []string) {
 			origin, _ := cmd.Flags().GetString("origin")
 			api := &apiHandler{origin: origin}
