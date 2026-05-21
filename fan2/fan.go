@@ -35,7 +35,6 @@ func (m Mode) Toggle() Mode {
 }
 
 type Fan struct {
-	responses  map[int64]chan []byte
 	connection net.Conn
 	deviceID   string
 	debug      io.Writer
@@ -64,36 +63,6 @@ func (fan *Fan) Timeout(duration time.Duration) {
 
 func (fan *Fan) debugMsg(msg string) {
 	fmt.Fprintln(fan.debug, msg)
-}
-
-func (fan *Fan) reader() {
-	response := make([]byte, 1024*4)
-	for {
-		if fan.timeout > 0 {
-			fan.connection.SetReadDeadline(time.Now().Add(fan.timeout))
-		}
-		n, err := fan.connection.Read(response)
-		if err != nil {
-			if err, ok := err.(net.Error); ok && !err.Timeout() {
-				if fan.debug != nil {
-					fan.debugMsg(fmt.Sprintf("<-error: %s", err))
-				}
-			return
-			}
-		}
-
-		msgID, err := jsonparser.GetInt(response[:n], "id")
-		if err != nil {
-			continue
-		}
-
-		if ch, ok := fan.responses[msgID]; ok {
-			ch <- response[:n]
-		}
-
-		delete(fan.responses, msgID)
-
-	}
 }
 
 func (fan *Fan) GetDeviceInformation() (*DeviceInformation, error) {
@@ -399,18 +368,21 @@ func (fan *Fan) createCommand(method method, params ...*param) (cmd *command, er
 	return cmd, nil
 }
 
-func (fan *Fan) SendPayloadJSON(payload []byte, waitForRespone bool) (response []byte, err error) {
-	msgID, err := jsonparser.GetInt(payload, "id")
+func (fan *Fan) drain() {
+	fan.connection.SetReadDeadline(time.Now().Add(time.Millisecond))
+	buf := make([]byte, 1024*4)
+	fan.connection.Read(buf)
+}
+
+func (fan *Fan) sendAndReceive(v any) (b []byte, err error) {
+	payload, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
 
-	if waitForRespone {
-		// register channel before sending payload
-		fan.responses[msgID] = make(chan []byte)
-		defer func() {
-			delete(fan.responses, msgID)
-		}()
+	msgID, err := jsonparser.GetInt(payload, "id")
+	if err != nil {
+		return nil, err
 	}
 
 	if fan.timeout > 0 {
@@ -422,54 +394,33 @@ func (fan *Fan) SendPayloadJSON(payload []byte, waitForRespone bool) (response [
 		return nil, err
 	}
 
-	if !waitForRespone {
-		return nil, nil
-	}
-
-	select {
-	case response = <-fan.responses[msgID]:
-		if len(response) == 0 || response == nil {
-			return nil, fmt.Errorf("no response")
-		}
-		return response, nil
-	case <-time.Tick(500 * time.Millisecond):
+	buf := make([]byte, 1024*4)
+	fan.connection.SetReadDeadline(time.Now().Add(fan.timeout))
+	n, err := fan.connection.Read(buf)
+	if err != nil {
+		fan.drain()
 		return nil, fmt.Errorf("timeout for response")
 	}
 
-}
-
-func (fan *Fan) SendPayloadAndWait(v any) (response []byte, err error) {
-	payload, err := json.Marshal(v)
+	respID, err := jsonparser.GetInt(buf[:n], "id")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid response: %w", err)
+	}
+	if respID != msgID {
+		return nil, fmt.Errorf("unexpected response id %d, expected %d", respID, msgID)
 	}
 
-	response, err = fan.SendPayloadJSON(payload, true)
-	if err != nil {
-		return nil, err
-	}
-
-	code, err := jsonparser.GetInt(response, "error", "code")
+	code, err := jsonparser.GetInt(buf[:n], "error", "code")
 	if err == nil && code != 0 {
-		msg, _ := jsonparser.GetString(response, "error.message")
+		msg, _ := jsonparser.GetString(buf[:n], "error.message")
 		return nil, fmt.Errorf("invalid packet error code %d:%s", code, msg)
 	}
 
-	return response, nil
+	return buf[:n], nil
 }
 
-func (fan *Fan) SendPayload(v any) (err error) {
-	payload, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	_, err = fan.SendPayloadJSON(payload, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (fan *Fan) SendPayloadAndWait(v any) (response []byte, err error) {
+	return fan.sendAndReceive(v)
 }
 
 func (fan *Fan) Close() error {
@@ -487,7 +438,6 @@ func (fan *Fan) nextMsgID() int32 {
 }
 
 func NewFan2(ip string, deviceID uint32, deciveToken string) (*Fan, error) {
-	rand.Seed(time.Now().UnixNano())
 	token, err := hex.DecodeString(deciveToken)
 	if err != nil {
 		return nil, err
@@ -501,11 +451,9 @@ func NewFan2(ip string, deviceID uint32, deciveToken string) (*Fan, error) {
 	fan := &Fan{
 		connection: connection,
 		deviceID:   fmt.Sprintf("%d", deviceID),
-		responses:  make(map[int64]chan []byte),
 	}
 
-	go fan.reader()
-	fan.Timeout(time.Second * 2)
+	fan.Timeout(500 * time.Millisecond)
 
 	return fan, nil
 }
