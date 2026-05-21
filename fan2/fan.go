@@ -22,6 +22,18 @@ type DeviceInformation struct {
 	Life          int
 }
 
+type FanStatus struct {
+	Power      bool
+	Level      FanLevel
+	Mode       Mode
+	Swing      bool
+	Angle      HorizontalAngle
+	Brightness bool
+	Alarm      bool
+	SpeedLevel uint8
+	ChildLock  bool
+}
+
 type Mode uint8
 
 const (
@@ -103,6 +115,48 @@ func (fan *Fan) GetDeviceInformation() (*DeviceInformation, error) {
 		MCUFirmwareVer: info.MCUFirmwareVer,
 		MAC:            info.MAC,
 		Life:           info.Life,
+	}, nil
+}
+
+func (fan *Fan) GetAllStatus() (*FanStatus, error) {
+	cmd, err := fan.createCommand(getProperties,
+		switchStatus(nil),
+		fanLevel(nil),
+		mode(nil),
+		horizontalSwing(nil),
+		horizontalAngle(nil),
+		brightness(nil),
+		alarm(nil),
+		speedLevel(nil),
+		childLock(nil),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := fan.SendPayloadAndWait(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	vals := make([]any, 9)
+	for i := range vals {
+		vals[i], err = fan.getResponseValue(response, i)
+		if err != nil {
+			return nil, fmt.Errorf("property %d: %w", i, err)
+		}
+	}
+
+	return &FanStatus{
+		Power:      vals[0].(bool),
+		Level:      FanLevel(vals[1].(int64)),
+		Mode:       Mode(vals[2].(int64)),
+		Swing:      vals[3].(bool),
+		Angle:      HorizontalAngle(vals[4].(int64)),
+		Brightness: vals[5].(bool),
+		Alarm:      vals[6].(bool),
+		SpeedLevel: uint8(vals[7].(int64)),
+		ChildLock:  vals[8].(bool),
 	}, nil
 }
 

@@ -125,18 +125,22 @@ func (h *apiHandler) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *apiHandler) writeStatus(w http.ResponseWriter, fan *fan2.Fan) {
-	power, _ := fan.GetPower()
-	level, _ := fan.GetLevel()
-	swing, _ := fan.GetHorizontalSwing()
-	angle, _ := fan.GetHorizontalAngle()
-	mode, _ := fan.GetMode()
+	status, err := fan.GetAllStatus()
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"power": power,
-		"level": int(level),
-		"swing": swing,
-		"angle": int(angle),
-		"mode":  int(mode),
+		"power":     status.Power,
+		"level":     int(status.Level),
+		"swing":     status.Swing,
+		"angle":     int(status.Angle),
+		"mode":      int(status.Mode),
+		"led":       status.Brightness,
+		"alarm":     status.Alarm,
+		"speed":     status.SpeedLevel,
+		"childlock": status.ChildLock,
 	})
 }
 
