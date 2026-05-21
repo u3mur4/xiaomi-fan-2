@@ -85,6 +85,20 @@ fan2ctl polybar             # polybar output (with online/offline indicator)
 
 Notifications from CLI commands (e.g. `fan2ctl on`) automatically refresh the widget output.
 
+### Waybar config example
+
+```json
+"custom/xiaomi-fan": {
+  "restart-interval": 5,
+  "exec": "fan2ctl waybar",
+  "on-click": "fan2ctl swing",
+  "on-click-right": "fan2ctl toggle",
+  "on-click-middle": "fan2ctl mode",
+  "on-scroll-up": "fan2ctl up",
+  "on-scroll-down": "fan2ctl down"
+}
+```
+
 ## Server
 
 ```bash
