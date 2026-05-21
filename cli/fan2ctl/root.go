@@ -21,6 +21,7 @@ type fanConfig struct {
 var (
 	deviceName   string
 	config       fanConfig
+	notifier     = &Notifier{Port: 25631}
 	rootCmd      = &cobra.Command{
 		Use:   "fan2ctl",
 		Short: "control your smart fan",
@@ -105,7 +106,7 @@ func tryFan() (*fan2.Fan, error) {
 	if err != nil {
 		return nil, err
 	}
-	fan.SetNotify(func() { sendNotify(notifServerPort) })
+	fan.SetNotify(notifier.Notify)
 	return fan, nil
 }
 

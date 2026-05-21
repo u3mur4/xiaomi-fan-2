@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var notifServerPort = 25631
-
 func init() {
 	var waybarCmd = &cobra.Command{
 		Use:   "waybar",
@@ -20,7 +18,7 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, syscall.SIGUSR1)
-			sn, err := notifyServer(notifServerPort)
+			sn, err := notifier.Listen()
 			exitIfErr(err)
 
 			fan, _ := tryFan()
@@ -54,7 +52,7 @@ func init() {
 			}
 		},
 	}
-	waybarCmd.Flags().IntVar(&notifServerPort, "notify-server-port", notifServerPort, "port to listen for notifications")
+	waybarCmd.Flags().IntVar(&notifier.Port, "notify-server-port", notifier.Port, "port to listen for notifications")
 	rootCmd.AddCommand(waybarCmd)
 
 	var polybarCmd = &cobra.Command{
@@ -110,14 +108,4 @@ func init() {
 		},
 	}
 	rootCmd.AddCommand(serverCmd)
-}
-
-func sendNotify(notifServerPort int) error {
-	url := fmt.Sprintf("http://127.0.0.1:%d/notify", notifServerPort)
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	return nil
 }

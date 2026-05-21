@@ -6,7 +6,19 @@ import (
 	"net/http"
 )
 
-func notifyServer(port int) (<-chan struct{}, error) {
+type Notifier struct {
+	Port int
+}
+
+func (n *Notifier) Notify() {
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/notify", n.Port))
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
+}
+
+func (n *Notifier) Listen() (<-chan struct{}, error) {
 	ch := make(chan struct{})
 
 	go func() {
@@ -19,7 +31,7 @@ func notifyServer(port int) (<-chan struct{}, error) {
 			}
 		})
 
-		if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil); err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", n.Port), nil); err != nil {
 			log.Fatal(err)
 		}
 	}()
