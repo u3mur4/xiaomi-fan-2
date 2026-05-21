@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -93,19 +91,4 @@ func init() {
 		},
 	}
 	rootCmd.AddCommand(polybarCmd)
-
-	var serverCmd = &cobra.Command{
-		Use:   "server",
-		Short: "control with http server",
-		Run: func(cmd *cobra.Command, args []string) {
-			port := 35352
-			handler := HandleCmd{tryFan: tryFan}
-			http.HandleFunc("/", handler.handleCmd)
-			fmt.Printf("http://0.0.0.0:%d\n", port)
-			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-				return
-			}
-		},
-	}
-	rootCmd.AddCommand(serverCmd)
 }

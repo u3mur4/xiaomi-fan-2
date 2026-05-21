@@ -37,6 +37,6 @@ WORKDIR /app
 # Copy the static binary from the builder stage
 COPY --from=builder /fan2ctl /app/fan2ctl
 
-EXPOSE 35352
+EXPOSE 8080
 
-CMD ["/app/fan2ctl", "server"]
+CMD ["/app/fan2ctl", "web"]

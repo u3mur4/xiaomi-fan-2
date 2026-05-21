@@ -76,6 +76,8 @@ fan2ctl angle [DEG]         # set/next swing angle
 fan2ctl mode                # toggle direct/natural breeze
 fan2ctl delay_off [MIN]     # turn off after minutes
 fan2ctl status              # show fan state + online status
+fan2ctl api                 # start REST API server
+fan2ctl web                 # start web UI
 ```
 
 ## Bar Integration
@@ -101,17 +103,33 @@ Notifications from CLI commands (e.g. `fan2ctl on`) automatically refresh the wi
 }
 ```
 
-## Server
+## API
 
 ```bash
-fan2ctl server              # HTTP server on port 35352
+fan2ctl api                 # REST API on port 35352
+fan2ctl api --port 9090     # custom port
+fan2ctl api --origin http://localhost:8080  # allow CORS from web UI
+```
+
+Endpoints:
+
+```
+POST /api/command  {"cmd":"toggle", "device":"living_room"}
+GET  /api/status?device=living_room
+```
+
+## Web UI
+
+```bash
+fan2ctl web                 # web UI on port 8080 (includes built-in API)
+fan2ctl web --port 9090     # custom port
 ```
 
 ## Docker
 
 ```bash
 docker build -t fan2ctl .
-docker run -p 35352:35352 fan2ctl
+docker run -p 8080:8080 fan2ctl web
 ```
 
 ## Protocol

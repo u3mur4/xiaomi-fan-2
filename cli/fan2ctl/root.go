@@ -65,12 +65,16 @@ func initConfig() {
 	}
 }
 
-func tryFan() (*fan2.Fan, error) {
+func tryFanForDevice(name string) (*fan2.Fan, error) {
 	locationKey := "location"
 	IdKey := "id"
 	tokenKey := "token"
 
-	if deviceName != "" {
+	if name != "" {
+		locationKey = fmt.Sprintf("%s.location", name)
+		IdKey = fmt.Sprintf("%s.id", name)
+		tokenKey = fmt.Sprintf("%s.token", name)
+	} else if deviceName != "" {
 		locationKey = fmt.Sprintf("%s.location", deviceName)
 		IdKey = fmt.Sprintf("%s.id", deviceName)
 		tokenKey = fmt.Sprintf("%s.token", deviceName)
@@ -92,14 +96,21 @@ func tryFan() (*fan2.Fan, error) {
 	config.Token = viper.GetString(tokenKey)
 
 	if config.Location == "" {
-		if name := singleDevice(); name != "" {
-			locationKey = fmt.Sprintf("%s.location", name)
-			IdKey = fmt.Sprintf("%s.id", name)
-			tokenKey = fmt.Sprintf("%s.token", name)
+		if name != "" {
+			return nil, fmt.Errorf("device %q not found", name)
+		}
+		if single := singleDevice(); single != "" {
+			locationKey = fmt.Sprintf("%s.location", single)
+			IdKey = fmt.Sprintf("%s.id", single)
+			tokenKey = fmt.Sprintf("%s.token", single)
 			config.Location = viper.GetString(locationKey)
 			config.Id = viper.GetUint32(IdKey)
 			config.Token = viper.GetString(tokenKey)
 		}
+	}
+
+	if config.Location == "" {
+		return nil, fmt.Errorf("no device configured")
 	}
 
 	fan, err := fan2.NewFan2(config.Location, config.Id, config.Token)
@@ -108,6 +119,10 @@ func tryFan() (*fan2.Fan, error) {
 	}
 	fan.OnChange(notifier.Notify)
 	return fan, nil
+}
+
+func tryFan() (*fan2.Fan, error) {
+	return tryFanForDevice("")
 }
 
 func getFan() *fan2.Fan {
