@@ -142,3 +142,43 @@ func mode(mode *Mode) *param {
 		Value:      mode,
 	}
 }
+
+func brightness(status *bool) *param {
+	return &param{
+		ServiceID:  2,
+		PropertyID: 7,
+		Value:      status,
+	}
+}
+
+func alarm(status *bool) *param {
+	return &param{
+		ServiceID:  2,
+		PropertyID: 8,
+		Value:      status,
+	}
+}
+
+func motorControl(val *uint8) *param {
+	return &param{
+		ServiceID:  2,
+		PropertyID: 9,
+		Value:      val,
+	}
+}
+
+func speedLevel(val *uint8) *param {
+	return &param{
+		ServiceID:  2,
+		PropertyID: 10,
+		Value:      val,
+	}
+}
+
+func childLock(status *bool) *param {
+	return &param{
+		ServiceID:  3,
+		PropertyID: 1,
+		Value:      status,
+	}
+}

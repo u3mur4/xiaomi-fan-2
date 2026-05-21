@@ -3,10 +3,22 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/u3mur4/xiaomi-fan-2/fan2"
 )
+
+func parseOnOff(s string) (bool, error) {
+	switch strings.ToLower(s) {
+	case "on":
+		return true, nil
+	case "off":
+		return false, nil
+	default:
+		return false, fmt.Errorf("expected 'on' or 'off', got %q", s)
+	}
+}
 
 func init() {
 	var onCmd = &cobra.Command{
@@ -136,11 +148,23 @@ func init() {
 			exitIfErr(err)
 			mode, err := fan.GetMode()
 			exitIfErr(err)
-			fmt.Printf("Power: %+v\n", power)
-			fmt.Printf("Level: %+v\n", level)
-			fmt.Printf("Swing: %+v\n", swing)
-			fmt.Printf("Angle: %+v\n", angle)
-			fmt.Printf("Mode: %+v\n", mode)
+			brightness, err := fan.GetBrightness()
+			exitIfErr(err)
+			alarm_, err := fan.GetAlarm()
+			exitIfErr(err)
+			speed, err := fan.GetSpeedLevel()
+			exitIfErr(err)
+			childlock, err := fan.GetChildLock()
+			exitIfErr(err)
+			fmt.Printf("Power:     %+v\n", power)
+			fmt.Printf("Level:     %+v\n", level)
+			fmt.Printf("Swing:     %+v\n", swing)
+			fmt.Printf("Angle:     %+v\n", angle)
+			fmt.Printf("Mode:      %+v\n", mode)
+			fmt.Printf("LED:       %+v\n", brightness)
+			fmt.Printf("Alarm:     %+v\n", alarm_)
+			fmt.Printf("Speed:     %+v\n", speed)
+			fmt.Printf("Childlock: %+v\n", childlock)
 		},
 	}
 	rootCmd.AddCommand(statusCmd)
@@ -189,4 +213,78 @@ func init() {
 		},
 	}
 	rootCmd.AddCommand(angleCmd)
+
+	var ledCmd = &cobra.Command{
+		Use:     "led <on|off>",
+		Args:    cobra.ExactArgs(1),
+		Short:   "toggle the LED light",
+		GroupID: "fan",
+		Run: func(cmd *cobra.Command, args []string) {
+			status, err := parseOnOff(args[0])
+			exitIfErr(err)
+			exitIfErr(getFan().SetBrightness(status))
+		},
+	}
+	rootCmd.AddCommand(ledCmd)
+
+	var alarmCmd = &cobra.Command{
+		Use:     "alarm <on|off>",
+		Args:    cobra.ExactArgs(1),
+		Short:   "toggle the beep sound",
+		GroupID: "fan",
+		Run: func(cmd *cobra.Command, args []string) {
+			status, err := parseOnOff(args[0])
+			exitIfErr(err)
+			exitIfErr(getFan().SetAlarm(status))
+		},
+	}
+	rootCmd.AddCommand(alarmCmd)
+
+	var childlockCmd = &cobra.Command{
+		Use:     "childlock <on|off>",
+		Args:    cobra.ExactArgs(1),
+		Short:   "set physical control lock",
+		GroupID: "fan",
+		Run: func(cmd *cobra.Command, args []string) {
+			status, err := parseOnOff(args[0])
+			exitIfErr(err)
+			exitIfErr(getFan().SetChildLock(status))
+		},
+	}
+	rootCmd.AddCommand(childlockCmd)
+
+	var speedCmd = &cobra.Command{
+		Use:     "speed <1-100>",
+		Args:    cobra.ExactArgs(1),
+		Short:   "set fine-grained speed level",
+		GroupID: "fan",
+		Run: func(cmd *cobra.Command, args []string) {
+			val, err := strconv.Atoi(args[0])
+			exitIfErr(err)
+			exitIfErr(getFan().SetSpeedLevel(uint8(val)))
+		},
+	}
+	rootCmd.AddCommand(speedCmd)
+
+	var motorCmd = &cobra.Command{
+		Use:     "motor <left|right|no>",
+		Args:    cobra.ExactArgs(1),
+		Short:   "direct motor movement (momentary)",
+		GroupID: "fan",
+		Run: func(cmd *cobra.Command, args []string) {
+			var val uint8
+			switch strings.ToLower(args[0]) {
+			case "no":
+				val = 0
+			case "left":
+				val = 1
+			case "right":
+				val = 2
+			default:
+				exitIfErr(fmt.Errorf("expected 'left', 'right', or 'no', got %q", args[0]))
+			}
+			exitIfErr(getFan().SetMotorControl(val))
+		},
+	}
+	rootCmd.AddCommand(motorCmd)
 }

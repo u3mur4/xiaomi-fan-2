@@ -313,6 +313,120 @@ func (fan *Fan) On() error {
 	return err
 }
 
+func (fan *Fan) SetBrightness(status bool) error {
+	defer fan.changed()
+	cmd, err := fan.createCommand(setProperties, brightness(&status))
+	if err != nil {
+		return err
+	}
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
+}
+
+func (fan *Fan) GetBrightness() (bool, error) {
+	cmd, err := fan.createCommand(getProperties, brightness(nil))
+	if err != nil {
+		return false, err
+	}
+	response, err := fan.SendPayloadAndWait(cmd)
+	if err != nil {
+		return false, err
+	}
+	val, err := fan.getResponseValue(response, 0)
+	if err != nil {
+		return false, err
+	}
+	return val.(bool), nil
+}
+
+func (fan *Fan) SetAlarm(status bool) error {
+	defer fan.changed()
+	cmd, err := fan.createCommand(setProperties, alarm(&status))
+	if err != nil {
+		return err
+	}
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
+}
+
+func (fan *Fan) GetAlarm() (bool, error) {
+	cmd, err := fan.createCommand(getProperties, alarm(nil))
+	if err != nil {
+		return false, err
+	}
+	response, err := fan.SendPayloadAndWait(cmd)
+	if err != nil {
+		return false, err
+	}
+	val, err := fan.getResponseValue(response, 0)
+	if err != nil {
+		return false, err
+	}
+	return val.(bool), nil
+}
+
+func (fan *Fan) SetMotorControl(val uint8) error {
+	defer fan.changed()
+	cmd, err := fan.createCommand(setProperties, motorControl(&val))
+	if err != nil {
+		return err
+	}
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
+}
+
+func (fan *Fan) SetSpeedLevel(level uint8) error {
+	defer fan.changed()
+	cmd, err := fan.createCommand(setProperties, speedLevel(&level))
+	if err != nil {
+		return err
+	}
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
+}
+
+func (fan *Fan) GetSpeedLevel() (uint8, error) {
+	cmd, err := fan.createCommand(getProperties, speedLevel(nil))
+	if err != nil {
+		return 0, err
+	}
+	response, err := fan.SendPayloadAndWait(cmd)
+	if err != nil {
+		return 0, err
+	}
+	val, err := fan.getResponseValue(response, 0)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(val.(int64)), nil
+}
+
+func (fan *Fan) SetChildLock(status bool) error {
+	defer fan.changed()
+	cmd, err := fan.createCommand(setProperties, childLock(&status))
+	if err != nil {
+		return err
+	}
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
+}
+
+func (fan *Fan) GetChildLock() (bool, error) {
+	cmd, err := fan.createCommand(getProperties, childLock(nil))
+	if err != nil {
+		return false, err
+	}
+	response, err := fan.SendPayloadAndWait(cmd)
+	if err != nil {
+		return false, err
+	}
+	val, err := fan.getResponseValue(response, 0)
+	if err != nil {
+		return false, err
+	}
+	return val.(bool), nil
+}
+
 func (fan *Fan) Off() error {
 	defer fan.changed()
 	status := false

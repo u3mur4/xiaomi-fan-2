@@ -94,6 +94,12 @@ fan2ctl swing               # toggle horizontal swing
 fan2ctl angle [DEG]         # set/next swing angle
 fan2ctl mode                # toggle direct/natural breeze
 fan2ctl delay_off [MIN]     # turn off after minutes
+fan2ctl speed <1-100>       # fine-grained speed level
+fan2ctl led <on|off>        # toggle LED light
+fan2ctl alarm <on|off>      # toggle beep sound
+fan2ctl childlock <on|off>  # set physical control lock
+fan2ctl motor <left|right|no> # direct motor movement
+fan2ctl info                # show device info (model, firmware, etc.)
 fan2ctl status              # show fan state + online status
 fan2ctl api                 # start REST API server
 fan2ctl web                 # start web UI
