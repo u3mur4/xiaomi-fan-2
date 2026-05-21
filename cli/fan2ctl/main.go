@@ -86,7 +86,7 @@ func main() {
 	var config fanConfig
 
 	var rootCmd = &cobra.Command{
-		Use:   "xiaomi-fan-2",
+		Use:   "fan2ctl",
 		Short: "control your smart fan",
 	}
 	rootCmd.PersistentFlags().StringVar(&name, "name", "", "load device from name")
