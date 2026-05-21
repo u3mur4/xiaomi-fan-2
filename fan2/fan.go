@@ -27,7 +27,7 @@ const (
 	Sleep        Mode = 1
 )
 
-func (m Mode) Toogle() Mode {
+func (m Mode) Toggle() Mode {
 	if m == StraightWind {
 		return Sleep
 	}
@@ -341,7 +341,7 @@ func (fan *Fan) Off() error {
 	return fan.SendPayload(cmd)
 }
 
-func (fan *Fan) Toogle() error {
+func (fan *Fan) Toggle() error {
 	power, err := fan.GetPower()
 	if err != nil {
 		return err

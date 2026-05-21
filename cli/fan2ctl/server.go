@@ -18,7 +18,7 @@ func (handle *HandleCmd) handleCmd(w http.ResponseWriter, r *http.Request) {
 	cmd := r.URL.Query().Get("cmd")
 			
 	if cmd == "toggle" {
-		handle.getFan().Toogle()
+		handle.getFan().Toggle()
 	} else if cmd == "swing" {
 		// swing, _ := handle.getFan().GetHorizontalSwing()
 		// handle.getFan().SetHorizontalSwing(!swing)

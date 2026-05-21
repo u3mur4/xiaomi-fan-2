@@ -1,0 +1,99 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/spf13/cobra"
+)
+
+var notifServerPort = 25631
+
+func init() {
+	var waybarCmd = &cobra.Command{
+		Use:   "waybar",
+		Short: "waybar live output with control",
+		Run: func(cmd *cobra.Command, args []string) {
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, syscall.SIGUSR1)
+			sn, err := notifyServer(notifServerPort)
+			exitIfErr(err)
+
+			fan := getFan()
+			for {
+				if fan == nil {
+					fan = getFan()
+				}
+				power, _ := fan.GetPower()
+				level, _ := fan.GetLevel()
+				mode, _ := fan.GetMode()
+				printWaybar(power, int(level), int(mode))
+				select {
+				case <-sn:
+				case <-c:
+				case <-time.Tick(time.Second * 30):
+					fan.Close()
+					fan = nil
+				}
+			}
+		},
+	}
+	waybarCmd.Flags().IntVar(&notifServerPort, "notify-server-port", notifServerPort, "port to listen for notifications")
+	rootCmd.AddCommand(waybarCmd)
+
+	var polybarCmd = &cobra.Command{
+		Use:   "polybar",
+		Short: "polybar live output with control",
+		Run: func(cmd *cobra.Command, args []string) {
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, syscall.Signal(34))
+			signal.Notify(c, syscall.Signal(35))
+
+			fan := getFan()
+			for {
+				if fan == nil {
+					fan = getFan()
+				}
+				power, _ := fan.GetPower()
+				level, _ := fan.GetLevel()
+				printPolybar(power, int(level))
+				select {
+				case <-c:
+				case <-time.Tick(time.Second * 30):
+					fan.Close()
+					fan = nil
+				}
+			}
+		},
+	}
+	rootCmd.AddCommand(polybarCmd)
+
+	var serverCmd = &cobra.Command{
+		Use:   "server",
+		Short: "control with http server",
+		Run: func(cmd *cobra.Command, args []string) {
+			port := 35352
+			handler := HandleCmd{getFan: getFan}
+			http.HandleFunc("/", handler.handleCmd)
+			fmt.Printf("http://0.0.0.0:%d\n", port)
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+				return
+			}
+		},
+	}
+	rootCmd.AddCommand(serverCmd)
+}
+
+func sendNotify(notifServerPort int) error {
+	url := fmt.Sprintf("http://127.0.0.1:%d/notify", notifServerPort)
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
