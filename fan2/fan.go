@@ -7,7 +7,6 @@ import (
 	"io"
 	"math/rand"
 	"net"
-	"sync/atomic"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -52,11 +51,6 @@ type Fan struct {
 	deviceID   string
 	debug      io.Writer
 	timeout    time.Duration
-	connected  atomic.Bool
-}
-
-func (fan *Fan) Online() bool {
-	return fan.connected.Load()
 }
 
 func (fan *Fan) Debug(output io.Writer) {
@@ -84,8 +78,7 @@ func (fan *Fan) reader() {
 				if fan.debug != nil {
 					fan.debugMsg(fmt.Sprintf("<-error: %s", err))
 				}
-				fan.connected.Store(false)
-				return
+			return
 			}
 		}
 
@@ -427,13 +420,11 @@ func (fan *Fan) SendPayloadJSON(payload []byte, waitForRespone bool) (response [
 
 	select {
 	case response = <-fan.responses[msgID]:
-		fan.connected.Store(true)
 		if len(response) == 0 || response == nil {
 			return nil, fmt.Errorf("no response")
 		}
 		return response, nil
 	case <-time.Tick(500 * time.Millisecond):
-		fan.connected.Store(false)
 		return nil, fmt.Errorf("timeout for response")
 	}
 

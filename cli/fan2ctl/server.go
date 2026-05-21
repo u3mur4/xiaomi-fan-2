@@ -30,12 +30,6 @@ func (handle *HandleCmd) handleCmd(w http.ResponseWriter, r *http.Request) {
 		w.Write(controllHTML)
 		return
 	}
-	if !fan.Online() {
-		log.Printf("fan is offline")
-		w.Header().Set("Content-Type", "text/html")
-		w.Write(controllHTML)
-		return
-	}
 
 	switch cmd {
 	case "toggle":
