@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"sync/atomic"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -51,6 +52,11 @@ type Fan struct {
 	deviceID   string
 	debug      io.Writer
 	timeout    time.Duration
+	connected  atomic.Bool
+}
+
+func (fan *Fan) Online() bool {
+	return fan.connected.Load()
 }
 
 func (fan *Fan) Debug(output io.Writer) {
@@ -74,11 +80,11 @@ func (fan *Fan) reader() {
 		}
 		n, err := fan.connection.Read(response)
 		if err != nil {
-			// if not a timeout error exit read loop
 			if err, ok := err.(net.Error); ok && !err.Timeout() {
 				if fan.debug != nil {
 					fan.debugMsg(fmt.Sprintf("<-error: %s", err))
 				}
+				fan.connected.Store(false)
 				return
 			}
 		}
@@ -142,7 +148,8 @@ func (fan *Fan) SetLevel(level FanLevel) error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) GetLevel() (FanLevel, error) {
@@ -189,7 +196,8 @@ func (fan *Fan) SetMode(mode_ Mode) error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error) {
@@ -243,7 +251,8 @@ func (fan *Fan) SetHorizontalAngle(status HorizontalAngle) error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) GetHorizontalAngle() (HorizontalAngle, error) {
@@ -271,7 +280,8 @@ func (fan *Fan) SetHorizontalSwing(status bool) error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) GetHorizontalSwing() (bool, error) {
@@ -318,7 +328,8 @@ func (fan *Fan) DelayOff(minutes int64) error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) On() error {
@@ -328,7 +339,8 @@ func (fan *Fan) On() error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) Off() error {
@@ -338,7 +350,8 @@ func (fan *Fan) Off() error {
 		return err
 	}
 
-	return fan.SendPayload(cmd)
+	_, err = fan.SendPayloadAndWait(cmd)
+	return err
 }
 
 func (fan *Fan) Toggle() error {
@@ -414,11 +427,13 @@ func (fan *Fan) SendPayloadJSON(payload []byte, waitForRespone bool) (response [
 
 	select {
 	case response = <-fan.responses[msgID]:
+		fan.connected.Store(true)
 		if len(response) == 0 || response == nil {
 			return nil, fmt.Errorf("no response")
 		}
 		return response, nil
-	case <-time.Tick(time.Second):
+	case <-time.Tick(500 * time.Millisecond):
+		fan.connected.Store(false)
 		return nil, fmt.Errorf("timeout for response")
 	}
 

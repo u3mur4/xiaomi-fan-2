@@ -23,21 +23,33 @@ func init() {
 			sn, err := notifyServer(notifServerPort)
 			exitIfErr(err)
 
-			fan := getFan()
+			fan, _ := tryFan()
 			for {
 				if fan == nil {
-					fan = getFan()
+					fan, _ = tryFan()
 				}
-				power, _ := fan.GetPower()
-				level, _ := fan.GetLevel()
-				mode, _ := fan.GetMode()
-				printWaybar(power, int(level), int(mode))
+				if fan != nil {
+					power, err := fan.GetPower()
+					if err != nil {
+						printWaybar(false, false, 0, 0)
+						fan.Close()
+						fan = nil
+					} else {
+						level, _ := fan.GetLevel()
+						mode, _ := fan.GetMode()
+						printWaybar(true, power, int(level), int(mode))
+					}
+				} else {
+					printWaybar(false, false, 0, 0)
+				}
 				select {
 				case <-sn:
 				case <-c:
 				case <-time.Tick(time.Second * 30):
-					fan.Close()
-					fan = nil
+					if fan != nil {
+						fan.Close()
+						fan = nil
+					}
 				}
 			}
 		},
@@ -53,19 +65,31 @@ func init() {
 			signal.Notify(c, syscall.Signal(34))
 			signal.Notify(c, syscall.Signal(35))
 
-			fan := getFan()
+			fan, _ := tryFan()
 			for {
 				if fan == nil {
-					fan = getFan()
+					fan, _ = tryFan()
 				}
-				power, _ := fan.GetPower()
-				level, _ := fan.GetLevel()
-				printPolybar(power, int(level))
+				if fan != nil {
+					power, err := fan.GetPower()
+					if err != nil {
+						printPolybar(false, false, 0)
+						fan.Close()
+						fan = nil
+					} else {
+						level, _ := fan.GetLevel()
+						printPolybar(true, power, int(level))
+					}
+				} else {
+					printPolybar(false, false, 0)
+				}
 				select {
 				case <-c:
 				case <-time.Tick(time.Second * 30):
-					fan.Close()
-					fan = nil
+					if fan != nil {
+						fan.Close()
+						fan = nil
+					}
 				}
 			}
 		},
@@ -77,7 +101,7 @@ func init() {
 		Short: "control with http server",
 		Run: func(cmd *cobra.Command, args []string) {
 			port := 35352
-			handler := HandleCmd{getFan: getFan}
+			handler := HandleCmd{tryFan: tryFan}
 			http.HandleFunc("/", handler.handleCmd)
 			fmt.Printf("http://0.0.0.0:%d\n", port)
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {

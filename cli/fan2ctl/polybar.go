@@ -51,17 +51,20 @@ func buildCmd(name string, click string, args ...string) string {
 	return "%{A" + click + ":" + strings.Replace(b.String(), ":", "\\:", -1) + ":}"
 }
 
-func printPolybar(power bool, level int) {
+func printPolybar(online bool, power bool, level int) {
+	if !online {
+		fmt.Println("%{F#444}%{F-}")
+		return
+	}
+
 	buffer := bytes.Buffer{}
 
-	// color
 	if power {
 		buffer.WriteString("%{F")
 		buffer.WriteString(hexColor(color.RGBA{G: 170}))
 		buffer.WriteString("}")
 	}
 
-	// text
 	buffer.WriteString("")
 	if power {
 		fmt.Fprint(&buffer, "%{F#00ff80}%{O-3}")
@@ -69,7 +72,6 @@ func printPolybar(power bool, level int) {
 		fmt.Fprint(&buffer, "%{F-}%{O}")
 	}
 
-	// end color
 	if power {
 		buffer.WriteString("%{F-}")
 	}

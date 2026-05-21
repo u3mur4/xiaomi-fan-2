@@ -194,7 +194,7 @@ func SendHello(conn net.Conn) (token []byte, err error) {
 	hello.Checksum = [16]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
 	hello.Data = []byte{}
 
-	miio.SetWriteDeadline(time.Now().Add(time.Second))
+	miio.SetWriteDeadline(time.Now().Add(200 * time.Millisecond))
 	_, err = miio.Write(nil)
 	if err != nil {
 		return nil, err
@@ -203,7 +203,7 @@ func SendHello(conn net.Conn) (token []byte, err error) {
 	miio.packet, _ = newPacket(miio.deviceID, miio.deviceToken)
 
 	response := make([]byte, 1024)
-	miio.SetReadDeadline(time.Now().Add(time.Second))
+	miio.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
 	_, err = miio.Read(response)
 	if err != nil {
 		return nil, err
@@ -249,7 +249,10 @@ func Dial(ip string, deviceID uint32, deviceToken []byte) (net.Conn, error) {
 		debug:       nil,
 	}
 
-	SendHello(miio)
+	_, err = SendHello(miio)
+	if err != nil {
+		return nil, err
+	}
 
 	return miio, nil
 }

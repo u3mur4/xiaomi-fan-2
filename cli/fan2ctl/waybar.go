@@ -6,10 +6,15 @@ import (
 	"image/color"
 )
 
-func printWaybar(power bool, level int, mode int) {
+func printWaybar(online bool, power bool, level int, mode int) {
 	buffer := bytes.Buffer{}
 
-	// color
+	if !online {
+		buffer.WriteString("<span color='#888888'>𖣘</span>")
+		fmt.Println(buffer.String())
+		return
+	}
+
 	if power {
 		buffer.WriteString("<span color='")
 		outputColor := color.RGBA{G: 170}
@@ -20,17 +25,11 @@ func printWaybar(power bool, level int, mode int) {
 		buffer.WriteString("'>")
 	}
 
-	// text
 	buffer.WriteString("𖣘")
 	if power {
-		// fmt.Fprint(&buffer, "%{F#00ff80}%{O-3}")
-		// buffer.WriteString("<sup>")
 		fmt.Fprintf(&buffer, "%s", uInt32ToCircledNumberStr(uint32(level)))
-		// buffer.WriteString("</sup>")
-		// fmt.Fprint(&buffer, "%{F-}%{O}")
 	}
 
-	// end color
 	if power {
 		buffer.WriteString("</span>")
 	}

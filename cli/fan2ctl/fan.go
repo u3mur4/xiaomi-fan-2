@@ -85,6 +85,16 @@ func init() {
 	}
 	rootCmd.AddCommand(delayOffCmd)
 
+	var onlineCmd = &cobra.Command{
+		Use:   "online",
+		Short: "check if the fan is reachable",
+		Run: func(cmd *cobra.Command, args []string) {
+			getFan().GetPower()
+			fmt.Println("online")
+		},
+	}
+	rootCmd.AddCommand(onlineCmd)
+
 	var statusCmd = &cobra.Command{
 		Use:   "status",
 		Short: "show fan status",

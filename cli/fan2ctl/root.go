@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,7 +29,12 @@ var (
 
 func exitIfErr(err error) {
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		if strings.Contains(err.Error(), "timeout") {
+			fmt.Fprintln(os.Stderr, "fan is offline")
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		sendNotify(notifServerPort)
 		os.Exit(-1)
 	}
 }
@@ -59,7 +65,7 @@ func initConfig() {
 	}
 }
 
-func getFan() *fan2.Fan {
+func tryFan() (*fan2.Fan, error) {
 	locationKey := "location"
 	IdKey := "id"
 	tokenKey := "token"
@@ -96,7 +102,11 @@ func getFan() *fan2.Fan {
 		}
 	}
 
-	fan, err := fan2.NewFan2(config.Location, config.Id, config.Token)
+	return fan2.NewFan2(config.Location, config.Id, config.Token)
+}
+
+func getFan() *fan2.Fan {
+	fan, err := tryFan()
 	exitIfErr(err)
 	return fan
 }
