@@ -25,7 +25,9 @@ fan2ctl device add living_room --location 192.168.1.100 --id 123456789 --token y
 fan2ctl device add bedroom       --location 192.168.1.101 --id 987654321 --token anotherToken
 ```
 
-Set a default device (so you can omit `--device`):
+If you save only one device, it's used automatically — no need for `--device` or `device default`.
+
+Set a default device (or let the single-device auto-detect handle it):
 
 ```bash
 fan2ctl device default living_room
@@ -55,8 +57,8 @@ bedroom:
 ### Override device or use inline flags
 
 ```bash
-fan2ctl --device bedroom status     # use a different device
-fan2ctl --id X --location Y --token Z on  # no config needed
+fan2ctl --device bedroom on          # use a specific device (override default)
+fan2ctl --id X --location Y --token Z on   # no config needed, inline connection
 ```
 
 ## Usage
