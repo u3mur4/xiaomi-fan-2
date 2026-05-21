@@ -34,17 +34,6 @@ func (m Mode) Toggle() Mode {
 	return StraightWind
 }
 
-type DeviceStatus struct {
-	Power                 bool
-	Level                 FanLevel
-	HorizontalSwing       bool
-	Mode                  Mode
-	PowerOffDelayTime     int
-	Alarm                 bool
-	Brightness            bool
-	PhysicalControlLocked bool
-}
-
 type Fan struct {
 	responses  map[int64]chan []byte
 	connection net.Conn

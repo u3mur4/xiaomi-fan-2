@@ -78,9 +78,9 @@ func init() {
 		Short: "turn off after the specified minutes",
 		Run: func(cmd *cobra.Command, args []string) {
 			fan := getFan()
-			minutes, err := strconv.ParseInt(args[0], 10, 64)
+			minutes, err := strconv.Atoi(args[0])
 			exitIfErr(err)
-			exitIfErr(fan.DelayOff(minutes))
+			exitIfErr(fan.DelayOff(int64(minutes)))
 		},
 	}
 	rootCmd.AddCommand(delayOffCmd)
