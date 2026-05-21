@@ -106,7 +106,7 @@ func tryFan() (*fan2.Fan, error) {
 	if err != nil {
 		return nil, err
 	}
-	fan.SetNotify(notifier.Notify)
+	fan.OnChange(notifier.Notify)
 	return fan, nil
 }
 

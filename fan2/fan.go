@@ -54,7 +54,7 @@ type Fan struct {
 	notify     func()
 }
 
-func (fan *Fan) SetNotify(fn func()) {
+func (fan *Fan) OnChange(fn func()) {
 	fan.notify = fn
 }
 
