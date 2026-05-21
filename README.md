@@ -153,4 +153,4 @@ docker run -p 8080:8080 fan2ctl web
 
 ## Protocol
 
-https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:fan:0000A005:dmaker-1c:1
+https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:fan:0000A005:dmaker-p18:1
