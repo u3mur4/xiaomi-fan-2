@@ -2,7 +2,7 @@
 # Use an official Go image that is multi-arch.
 # Using a specific version is better for reproducibility.
 # Alpine is used for a smaller build stage.
-FROM golang:1.23-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY . .
 # CGO_ENABLED=0 creates a static binary without any C dependencies.
 # -ldflags="-s -w" strips debug symbols to make the binary smaller.
 ARG TARGETPLATFORM
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /xiaomi-fan-2 .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /fan2ctl ./cli/fan2ctl/
 
 
 # --- Stage 2: The Final Image ---
@@ -35,10 +35,8 @@ USER appuser
 WORKDIR /app
 
 # Copy the static binary from the builder stage
-COPY --from=builder /xiaomi-fan-2 /app/xiaomi-fan-2
+COPY --from=builder /fan2ctl /app/fan2ctl
 
-# EXPOSE the port your server listens on.
 EXPOSE 35352
 
-# Command to run the application
-CMD ["/app/xiaomi-fan-2", "server"]
+CMD ["/app/fan2ctl", "server"]
