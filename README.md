@@ -54,6 +54,25 @@ bedroom:
   token: "anotherToken"
 ```
 
+## Retrieving device token and ID
+
+The device token and ID are obtained from your Xiaomi account. Use the [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor):
+
+```bash
+pip3 install requests
+wget https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor/raw/master/token_extractor.py
+python3 token_extractor.py
+```
+
+Enter your Xiaomi account email and password, select your server region. The tool lists all devices with their **name**, **IP address**, and **token**.
+
+The device **ID** (numeric `did`) is not always shown by the token extractor. If missing, use [python-miio](https://github.com/rytilahti/python-miio) which includes it:
+
+```bash
+pip install python-miio
+miiocli cloud --username <email> --password <password> list
+```
+
 ### Override device or use inline flags
 
 ```bash
