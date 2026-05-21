@@ -107,6 +107,19 @@ func init() {
 		},
 	}
 
-	deviceCmd.AddCommand(addCmd, listCmd, removeCmd, defaultCmd)
+	var configCmd = &cobra.Command{
+		Use:   "config",
+		Short: "show config file path and content",
+		Run: func(cmd *cobra.Command, args []string) {
+			cfgFile := viper.ConfigFileUsed()
+			fmt.Println(cfgFile)
+			fmt.Println("---")
+			data, err := os.ReadFile(cfgFile)
+			exitIfErr(err)
+			fmt.Print(string(data))
+		},
+	}
+
+	deviceCmd.AddCommand(addCmd, listCmd, removeCmd, defaultCmd, configCmd)
 	rootCmd.AddCommand(deviceCmd)
 }
