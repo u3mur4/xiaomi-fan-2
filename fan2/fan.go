@@ -51,6 +51,17 @@ type Fan struct {
 	deviceID   string
 	debug      io.Writer
 	timeout    time.Duration
+	notify     func()
+}
+
+func (fan *Fan) SetNotify(fn func()) {
+	fan.notify = fn
+}
+
+func (fan *Fan) changed() {
+	if fan.notify != nil {
+		fan.notify()
+	}
 }
 
 func (fan *Fan) Debug(output io.Writer) {
@@ -136,6 +147,7 @@ func (fan *Fan) GetDeviceInformation() (*DeviceInformation, error) {
 }
 
 func (fan *Fan) SetLevel(level FanLevel) error {
+	defer fan.changed()
 	cmd, err := fan.createCommand(setProperties, fanLevel(&level))
 	if err != nil {
 		return err
@@ -184,6 +196,7 @@ func (fan *Fan) GetMode() (Mode, error) {
 }
 
 func (fan *Fan) SetMode(mode_ Mode) error {
+	defer fan.changed()
 	cmd, err := fan.createCommand(setProperties, mode(&mode_))
 	if err != nil {
 		return err
@@ -239,6 +252,7 @@ func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error
 }
 
 func (fan *Fan) SetHorizontalAngle(status HorizontalAngle) error {
+	defer fan.changed()
 	cmd, err := fan.createCommand(setProperties, horizontalAngle(&status))
 	if err != nil {
 		return err
@@ -268,6 +282,7 @@ func (fan *Fan) GetHorizontalAngle() (HorizontalAngle, error) {
 }
 
 func (fan *Fan) SetHorizontalSwing(status bool) error {
+	defer fan.changed()
 	cmd, err := fan.createCommand(setProperties, horizontalSwing(&status))
 	if err != nil {
 		return err
@@ -316,6 +331,7 @@ func (fan *Fan) GetPower() (bool, error) {
 }
 
 func (fan *Fan) DelayOff(minutes int64) error {
+	defer fan.changed()
 	cmd, err := fan.createCommand(setProperties, delayOff(&minutes))
 	if err != nil {
 		return err
@@ -326,6 +342,7 @@ func (fan *Fan) DelayOff(minutes int64) error {
 }
 
 func (fan *Fan) On() error {
+	defer fan.changed()
 	status := true
 	cmd, err := fan.createCommand(setProperties, switchStatus(&status))
 	if err != nil {
@@ -337,6 +354,7 @@ func (fan *Fan) On() error {
 }
 
 func (fan *Fan) Off() error {
+	defer fan.changed()
 	status := false
 	cmd, err := fan.createCommand(setProperties, switchStatus(&status))
 	if err != nil {
@@ -348,6 +366,7 @@ func (fan *Fan) Off() error {
 }
 
 func (fan *Fan) Toggle() error {
+	defer fan.changed()
 	power, err := fan.GetPower()
 	if err != nil {
 		return err

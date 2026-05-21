@@ -34,7 +34,6 @@ func exitIfErr(err error) {
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}
-		sendNotify(notifServerPort)
 		os.Exit(-1)
 	}
 }
@@ -102,7 +101,12 @@ func tryFan() (*fan2.Fan, error) {
 		}
 	}
 
-	return fan2.NewFan2(config.Location, config.Id, config.Token)
+	fan, err := fan2.NewFan2(config.Location, config.Id, config.Token)
+	if err != nil {
+		return nil, err
+	}
+	fan.SetNotify(func() { sendNotify(notifServerPort) })
+	return fan, nil
 }
 
 func getFan() *fan2.Fan {
