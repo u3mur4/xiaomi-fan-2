@@ -103,6 +103,23 @@ func init() {
 	}
 	rootCmd.AddCommand(onlineCmd)
 
+	var infoCmd = &cobra.Command{
+		Use:     "info",
+		Short:   "show device information",
+		GroupID: "fan",
+		Run: func(cmd *cobra.Command, args []string) {
+			info, err := getFan().GetDeviceInformation()
+			exitIfErr(err)
+			fmt.Printf("Model:        %s\n", info.Model)
+			fmt.Printf("Firmware:     %s\n", info.FirmwareVer)
+			fmt.Printf("HW Version:   %s\n", info.HardwareVer)
+			fmt.Printf("MCU FW:       %s\n", info.MCUFirmwareVer)
+			fmt.Printf("MAC:          %s\n", info.MAC)
+			fmt.Printf("Uptime:       %ds\n", info.Life)
+		},
+	}
+	rootCmd.AddCommand(infoCmd)
+
 	var statusCmd = &cobra.Command{
 		Use:     "status",
 		Short:   "show fan status",

@@ -14,10 +14,12 @@ import (
 )
 
 type DeviceInformation struct {
-	Manufacturer   string
-	Model          string
-	SerialNumber   string
-	FirmwareVerson string
+	Model         string
+	FirmwareVer   string
+	HardwareVer   string
+	MCUFirmwareVer string
+	MAC           string
+	Life          int
 }
 
 type Mode uint8
@@ -66,9 +68,10 @@ func (fan *Fan) debugMsg(msg string) {
 }
 
 func (fan *Fan) GetDeviceInformation() (*DeviceInformation, error) {
-	cmd, err := fan.createCommand(getProperties, deviceManufacturer(), deviceModel(), deviceSerialNumber(), deviceFirmwareVersion())
-	if err != nil {
-		return nil, err
+	cmd := &command{
+		ID:     fan.nextMsgID(),
+		Method: method("miIO.info"),
+		Params: []any{},
 	}
 
 	response, err := fan.SendPayloadAndWait(cmd)
@@ -76,31 +79,30 @@ func (fan *Fan) GetDeviceInformation() (*DeviceInformation, error) {
 		return nil, err
 	}
 
-	manufacturer, err := fan.getResponseValue(response, 0)
+	result, _, _, err := jsonparser.Get(response, "result")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("miIO.info missing result: %w", err)
 	}
 
-	model, err := fan.getResponseValue(response, 1)
-	if err != nil {
-		return nil, err
+	var info struct {
+		Model         string `json:"model"`
+		FirmwareVer   string `json:"fw_ver"`
+		HardwareVer   string `json:"hw_ver"`
+		MCUFirmwareVer string `json:"mcu_fw_ver"`
+		MAC           string `json:"mac"`
+		Life          int    `json:"life"`
 	}
-
-	serialNumber, err := fan.getResponseValue(response, 2)
-	if err != nil {
-		return nil, err
-	}
-
-	firmwareVersion, err := fan.getResponseValue(response, 3)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(result, &info); err != nil {
+		return nil, fmt.Errorf("parse miIO.info result: %w", err)
 	}
 
 	return &DeviceInformation{
-		Manufacturer:   manufacturer.(string),
-		Model:          model.(string),
-		SerialNumber:   serialNumber.(string),
-		FirmwareVerson: firmwareVersion.(string),
+		Model:          info.Model,
+		FirmwareVer:    info.FirmwareVer,
+		HardwareVer:    info.HardwareVer,
+		MCUFirmwareVer: info.MCUFirmwareVer,
+		MAC:            info.MAC,
+		Life:           info.Life,
 	}, nil
 }
 
