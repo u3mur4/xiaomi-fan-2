@@ -2,7 +2,6 @@
 .gitignore
 *.md
 Dockerfile
-.dockerignore
 .vscode/
 .idea/
 *.env
