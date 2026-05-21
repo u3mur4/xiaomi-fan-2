@@ -1,3 +1,6 @@
+// Package miio implements the miIO binary protocol used by Xiaomi smart home
+// devices. It provides an encrypted UDP connection over which JSON-RPC-style
+// commands can be sent and received.
 package miio
 
 import (
@@ -123,7 +126,8 @@ func (miio *miio_connection) debugMsg(msg string) {
 	fmt.Fprintln(miio.debug, msg)
 }
 
-func SendHello(conn net.Conn) (token []byte, err error) {
+// sendHello performs the miIO handshake on an existing connection.
+func sendHello(conn net.Conn) (token []byte, err error) {
 	miio, ok := conn.(*miio_connection)
 	if !ok {
 		return nil, fmt.Errorf("not a miio connection")
@@ -154,6 +158,8 @@ func SendHello(conn net.Conn) (token []byte, err error) {
 	return miio.packet.Checksum[:], nil
 }
 
+// Debug enables debug logging for a miIO connection. All sent and received
+// packets (raw and decrypted) are written to the provided io.Writer.
 func Debug(conn net.Conn, output io.Writer) (err error) {
 	miio, ok := conn.(*miio_connection)
 	if !ok {
@@ -164,6 +170,9 @@ func Debug(conn net.Conn, output io.Writer) (err error) {
 	return nil
 }
 
+// Dial opens an encrypted miIO connection to a Xiaomi device at the given
+// IP address. It performs the initial handshake and returns a
+// connection that transparently encrypts writes and decrypts reads.
 func Dial(ip string, deviceID uint32, deviceToken []byte) (net.Conn, error) {
 
 	connection, err := net.Dial("udp", ip)
@@ -192,7 +201,7 @@ func Dial(ip string, deviceID uint32, deviceToken []byte) (net.Conn, error) {
 		debug:       nil,
 	}
 
-	_, err = SendHello(miio)
+	_, err = sendHello(miio)
 	if err != nil {
 		return nil, err
 	}
