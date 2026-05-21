@@ -1,4 +1,4 @@
-# Fannn
+# xiaomi-fan-2
 
 CLI tool to control Xiaomi Mi Smart Fan (dmaker.p18) via local miIO protocol.
 
