@@ -206,7 +206,7 @@ func (fan *Fan) SetMode(mode_ Mode) error {
 	return err
 }
 
-func (fan *Fan) getResponseValue(response []byte, index int) (interface{}, error) {
+func (fan *Fan) getResponseValue(response []byte, index int) (any, error) {
 	indexKey := fmt.Sprintf("[%d]", index)
 
 	code, err := jsonparser.GetInt(response, "result", indexKey, "code")
@@ -400,7 +400,7 @@ func (fan *Fan) createCommand(method method, params ...*param) (cmd *command, er
 		cmd.Params = params[0]
 		// fallthrough
 	default:
-		paramArray := make([]interface{}, 0, len(params))
+		paramArray := make([]any, 0, len(params))
 		for _, param := range params {
 			paramArray = append(paramArray, param)
 		}
@@ -449,7 +449,7 @@ func (fan *Fan) SendPayloadJSON(payload []byte, waitForRespone bool) (response [
 
 }
 
-func (fan *Fan) SendPayloadAndWait(v interface{}) (response []byte, err error) {
+func (fan *Fan) SendPayloadAndWait(v any) (response []byte, err error) {
 	payload, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
@@ -469,7 +469,7 @@ func (fan *Fan) SendPayloadAndWait(v interface{}) (response []byte, err error) {
 	return response, nil
 }
 
-func (fan *Fan) SendPayload(v interface{}) (err error) {
+func (fan *Fan) SendPayload(v any) (err error) {
 	payload, err := json.Marshal(v)
 	if err != nil {
 		return err

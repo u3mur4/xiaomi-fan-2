@@ -13,7 +13,7 @@ const (
 type command struct {
 	ID     int32       `json:"id"`
 	Method method      `json:"method"`
-	Params interface{} `json:"params,omitempty"`
+	Params any `json:"params,omitempty"`
 }
 
 type param struct {
@@ -25,10 +25,10 @@ type param struct {
 	ActionID   uint32 `json:"aiid,omitempty"`
 	EventID    uint32 `json:"eiid,omitempty"`
 
-	In interface{} `json:"in,omitempty"`
+	In any `json:"in,omitempty"`
 
-	Value     interface{} `json:"value,omitempty"`
-	Arguments interface{} `json:"arguments,omitempty"`
+	Value     any `json:"value,omitempty"`
+	Arguments any `json:"arguments,omitempty"`
 }
 
 func horizontalSwing(status *bool) *param {

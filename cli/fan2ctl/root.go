@@ -138,7 +138,7 @@ func singleDevice() string {
 		if name == "_default" {
 			continue
 		}
-		if _, ok := val.(map[string]interface{}); ok {
+		if _, ok := val.(map[string]any); ok {
 			names = append(names, name)
 		}
 	}
