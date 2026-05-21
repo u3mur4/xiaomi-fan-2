@@ -1,18 +1,10 @@
-# Ignore git files
 .git
 .gitignore
-
-# Ignore secrets and environment files
-token.env
-
-# Ignore existing binaries
-xiaomi-fan-2
-
-# Ignore IDE/editor directories
+*.md
+Dockerfile
+.dockerignore
 .vscode/
 .idea/
-
-# Ignore the Dockerfile itself
-Dockerfile
-
-    
+*.env
+fan2ctl
+xiaomi-fan-2
