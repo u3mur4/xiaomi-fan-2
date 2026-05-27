@@ -51,7 +51,7 @@ func buildCmd(name string, click string, args ...string) string {
 	return "%{A" + click + ":" + strings.Replace(b.String(), ":", "\\:", -1) + ":}"
 }
 
-func printPolybar(online bool, power bool, level int) {
+func printPolybar(online bool, power bool, level int, mode int) {
 	if !online {
 		fmt.Println("%{F#444}%{F-}")
 		return
