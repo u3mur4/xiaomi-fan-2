@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/u3mur4/xiaomi-fan-2/fan2"
 )
 
 func init() {
@@ -20,25 +21,27 @@ func init() {
 			sn, err := notifier.Listen()
 			exitIfErr(err)
 
-			fan, _ := tryFan()
+			var fan *fan2.Fan
 			for {
 				if fan == nil {
 					fan, _ = tryFan()
 				}
+
+				online, power, level, mode := false, false, 0, 0
 				if fan != nil {
-					power, err := fan.GetPower()
-					if err != nil {
-						printWaybar(false, false, 0, 0)
+					p, err := fan.GetPower()
+					if err == nil {
+						l, _ := fan.GetLevel()
+						m, _ := fan.GetMode()
+						online, power, level, mode = true, p, int(l), int(m)
+					} else {
 						fan.Close()
 						fan = nil
-					} else {
-						level, _ := fan.GetLevel()
-						mode, _ := fan.GetMode()
-						printWaybar(true, power, int(level), int(mode))
 					}
-				} else {
-					printWaybar(false, false, 0, 0)
 				}
+
+				printWaybar(online, power, level, mode)
+
 				select {
 				case <-sn:
 				case <-c:
@@ -63,24 +66,26 @@ func init() {
 			signal.Notify(c, syscall.Signal(34))
 			signal.Notify(c, syscall.Signal(35))
 
-			fan, _ := tryFan()
+			var fan *fan2.Fan
 			for {
 				if fan == nil {
 					fan, _ = tryFan()
 				}
+
+				online, power, level := false, false, 0
 				if fan != nil {
-					power, err := fan.GetPower()
-					if err != nil {
-						printPolybar(false, false, 0)
+					p, err := fan.GetPower()
+					if err == nil {
+						l, _ := fan.GetLevel()
+						online, power, level = true, p, int(l)
+					} else {
 						fan.Close()
 						fan = nil
-					} else {
-						level, _ := fan.GetLevel()
-						printPolybar(true, power, int(level))
 					}
-				} else {
-					printPolybar(false, false, 0)
 				}
+
+				printPolybar(online, power, level)
+
 				select {
 				case <-c:
 				case <-time.Tick(time.Second * 30):
