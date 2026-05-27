@@ -22,6 +22,7 @@ func init() {
 			exitIfErr(err)
 
 			var fan *fan2.Fan
+			backoff := time.Second
 			for {
 				if fan == nil {
 					fan, _ = tryFan()
@@ -42,13 +43,27 @@ func init() {
 
 				printWaybar(online, power, level, mode)
 
+				wait := 30 * time.Second
+				if !online {
+					wait = backoff
+				}
+
 				select {
 				case <-sn:
 				case <-c:
-				case <-time.Tick(time.Second * 30):
+				case <-time.After(wait):
 					if fan != nil {
 						fan.Close()
 						fan = nil
+					}
+				}
+
+				if online {
+					backoff = time.Second
+				} else {
+					backoff *= 2
+					if backoff > 30*time.Second {
+						backoff = 30 * time.Second
 					}
 				}
 			}
@@ -67,6 +82,7 @@ func init() {
 			signal.Notify(c, syscall.Signal(35))
 
 			var fan *fan2.Fan
+			backoff := time.Second
 			for {
 				if fan == nil {
 					fan, _ = tryFan()
@@ -86,12 +102,26 @@ func init() {
 
 				printPolybar(online, power, level)
 
+				wait := 30 * time.Second
+				if !online {
+					wait = backoff
+				}
+
 				select {
 				case <-c:
-				case <-time.Tick(time.Second * 30):
+				case <-time.After(wait):
 					if fan != nil {
 						fan.Close()
 						fan = nil
+					}
+				}
+
+				if online {
+					backoff = time.Second
+				} else {
+					backoff *= 2
+					if backoff > 30*time.Second {
+						backoff = 30 * time.Second
 					}
 				}
 			}
